@@ -59,12 +59,18 @@ class EventManagerClient:
 
     def keyboard_move_character(self, direction):
         print("=> event \"keyboard move direction\" {}".format(DIRECTIONS_STR[direction]))
+        if not self.model.player: return True
+        nickname = self.model.player.nickname
+        if direction in DIRECTIONS:
+            self.model.move_character(nickname, direction)
         # ...
         return True
 
     def keyboard_drop_bomb(self):
         print("=> event \"keyboard drop bomb\"")
-        # ...
+        if not self.model.player: return True
+        nickname = self.model.player.nickname
+        self.model.drop_bomb(nickname)
         return True
 
     # network events
@@ -82,8 +88,10 @@ class NetworkClientController:
         self.host = host
         self.port = port
         self.nickname = nickname
-        # ...
+        self.model.add_character(nickname, isplayer = True)
 
     def tick(self, dt):
-        # ...
+        print(self.model.player)
+        self.map = Map()
+        model.add_character("me", isplayer = True)
         return True

@@ -37,12 +37,14 @@ model.load_map(map_file)
 for _ in range(10): model.add_fruit()
 evm = EventManagerServer(model)
 server = NetworkServerController(model, evm, port)
+
 evm.setNetworkServerController(server)
 # view = GraphicView(model, "server")
 
 # main loop
 while True:
     # make sure game doesn't run at more than FPS frames per second
+    print(model.player)
     dt = clock.tick(FPS)
     server.tick(dt)
     model.tick(dt)
