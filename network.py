@@ -2,24 +2,8 @@
 # Author: aurelien.esnard@u-bordeaux.fr
 
 from model import *
+from keyboard import *
 
-################################################################################
-#                         EVENT MANAGER SERVER                                 #
-################################################################################
-
-### Class EventManagerServer ###
-
-class EventManagerServer:
-
-    def __init__(self, model):
-        self.model = model
-        self.server = None
-
-    def setNetworkServerController(self, server):
-        self.server = server
-
-    # network events
-    # ...
 
 ################################################################################
 #                          NETWORK SERVER CONTROLLER                           #
@@ -27,71 +11,96 @@ class EventManagerServer:
 
 class NetworkServerController:
 
-    def __init__(self, model, evm, port):
+    def __init__(self, model, port):
         self.model = model
-        self.evm = evm
         self.port = port
-        # ...
+        self.clients = []
+        #   ...
+
+    # time event
 
     def tick(self, dt):
-        # ...
+        #NetworkClientController.add_client_to_server()
+        for i in self.clients:
+            i.model = self.model
         return True
 
 ################################################################################
-#                         EVENT MANAGER CLIENT                                 #
+#                          NETWORK CLIENT CONTROLLER                           #
 ################################################################################
 
-### Class EventManagerClient ###
 
-class EventManagerClient:
+    
+class NetworkClientController:
 
-    def __init__(self, model):
+    def __init__(self, model, host, port, nickname):
         self.model = model
-        self.client = None
+        self.host = host
+        self.port = port
+        self.nickname = nickname
+        self.player = None
+        self.model.add_character(nickname, isplayer = True)
 
-    def setNetworkClientController(self, client):
-        self.client = client
-
+        # ...
+        
+    def add_client_to_server(self, newbie):
+            for i in self.clients:
+                if i == newbie:
+                    return self.clients
+            res = self.clients.append(newbie)
+            return res
     # keyboard events
-    def quit(self):
+
+    def keyboard_quit(self):
         print("=> event \"quit\"")
         return False
 
     def keyboard_move_character(self, direction):
         print("=> event \"keyboard move direction\" {}".format(DIRECTIONS_STR[direction]))
         if not self.model.player: return True
-        nickname = self.model.player.nickname
+        self.nickname = self.model.player.nickname
         if direction in DIRECTIONS:
-            self.model.move_character(nickname, direction)
-        # ...
+            self.model.move_character(self.nickname, direction)
         return True
 
     def keyboard_drop_bomb(self):
         print("=> event \"keyboard drop bomb\"")
         if not self.model.player: return True
-        nickname = self.model.player.nickname
-        self.model.drop_bomb(nickname)
+        self.nickname = self.model.player.nickname
+        self.model.drop_bomb(self.nickname)
         return True
 
-    # network events
-    # ...
+    # look for a character, return None if not found
+    def look(self, nickname):
+        # https://stackoverflow.com/questions/9542738/python-find-in-list
+        character = next( (c for c in self.characters if (c.nickname == nickname)), None) # first occurence
+        return character
+    
 
-################################################################################
-#                          NETWORK CLIENT CONTROLLER                           #
-################################################################################
+    # time event
+    def tick(self, dt):#a chaque tick on envoie les nouvelles info au serveur
+        #NetworkServerController.clients = add_client_to_server(self.nickname)
+        event = KeyboardController.tick(self,dt)
+        if event == False:
+            self.model=NetworkServerController.model
+        elif event == True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return False
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    return False
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    print(event.type)
+                    self.model.drop_bomb(self.model, self.nickname)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
+                    self.model.move_character(self.model, self.nickname, DIRECTION_UP)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
+                    self.model.move_character(self.model, self.nickname, DIRECTION_DOWN)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
+                    self.model.move_character(self.model, self.nickname, DIRECTION_LEFT)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
+                    self.model.move_character(self.model, self.nickname, DIRECTION_RIGHT)
 
-class NetworkClientController:
-
-    def __init__(self, model, evm, host, port, nickname):
-        self.model = model
-        self.evm = evm
-        self.host = host
-        self.port = port
-        self.nickname = nickname
-        self.model.add_character(nickname, isplayer = True)
-
-    def tick(self, dt):
-        print(self.model.player)
-        self.map = Map()
-        model.add_character("me", isplayer = True)
-        return True
+                NetworkServerController.model = self.model
+            return True
+        return None
