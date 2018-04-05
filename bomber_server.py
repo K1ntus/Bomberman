@@ -176,10 +176,10 @@ while True:
                     adding_new_nick(model, i)
                     if not(nick_dictionnary[socket_ip] == "server"):
                         model.add_character(nick_dictionnary[socket_ip], True)
-                elif data == b"send_map":
+                #elif data == b"send_map":
                     #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
-                    send_map(model, i)
-                elif data == b"moving":
+                send_map(model, i)
+                if data == b"moving":
                     #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
                     receive_player_movement(model, i)
             except IndexError:
