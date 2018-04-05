@@ -17,6 +17,7 @@ import os
 print("python version: {}.{}.{}".format(sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 print("pygame version: ", pygame.version.ver)
 
+
 ################################################################################
 #                                 MAIN                                         #
 ################################################################################
@@ -111,7 +112,7 @@ receive_map(model,s)
 
 view = GraphicView(model, nickname)
 
-client = NetworkClientController(model, host, port, nickname)
+client = NetworkClientController(model, host, port, nickname, s)
 kb = KeyboardController(client)
 
 # main loop
@@ -119,7 +120,7 @@ while True:
     # make sure game doesn't run at more than FPS frames per second
     dt = clock.tick(FPS)
     if not kb.tick(dt): break
-    if not client.tick(dt): break
+    if not client.tick(dt,socket): break
     model.tick(dt)
     view.tick(dt)
 

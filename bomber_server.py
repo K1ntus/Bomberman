@@ -74,6 +74,22 @@ def adding_new_nick(model, socket):
     model.add_character(nick_dictionnary[ip], True)
         
 
+def receive_player_movement(model, socket):
+    print("sending ack packet")
+    socket.send(b"ACK")
+    print("ack packet received from remote host")
+
+    (ip,a,b,c) = socket.getsockname()
+    username = nick_dictionnary[ip]
+    
+    movement = socket.recv(1500)#attribute the nick parameters to this ip
+    socket.send(b"ACK")
+    print("I received the order to move to: "+ movement.decode())
+    model.move_character(username, int(movement.decode()))
+    
+    
+            
+
 def send_map(model, socket):
     
     #print("Envoie des caractères")
@@ -163,6 +179,9 @@ while True:
                 elif data == b"send_map":
                     #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
                     send_map(model, i)
+                elif data == b"moving":
+                    #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
+                    receive_player_movement(model, i)
             except IndexError:
                 eof=True
             except AttributeError:
