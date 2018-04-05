@@ -33,7 +33,7 @@ if not os.system("ping -c 1 " + host) is 0:
     sys.exit()
 '''
 
-def receive_map(model, socket): #recepteur, ie server
+def receive_map(model, socket):
     print("Receiving map ..."+"\n")
     socket.sendall(b"send_map")
 
@@ -44,6 +44,7 @@ def receive_map(model, socket): #recepteur, ie server
         characters_array = characters
     socket.send(b"ACK")
     print("characters: "+str(characters_array)+"\n")
+    model.characters = characters
 
     print("Receiving fruits ...")
     fruits = pickle.loads(socket.recv(1500))
@@ -52,6 +53,7 @@ def receive_map(model, socket): #recepteur, ie server
         fruits_array = fruits
     socket.sendall(b"ACK")
     print("fruits: "+str(fruits_array)+"\n")
+    model.fruits = fruits
 
     print("Receiving bombs ...")
     bombs = pickle.loads(socket.recv(1500))
@@ -60,6 +62,7 @@ def receive_map(model, socket): #recepteur, ie server
         bombs_array = bombs
     socket.send(b"ACK")
     print("bombs: "+str(bombs_array)+"\n")
+    model.bombs = bombs
     
     print("Receiving players ...")
     players = pickle.loads(socket.recv(1500))
@@ -69,8 +72,7 @@ def receive_map(model, socket): #recepteur, ie server
         players_array = players
     socket.send(b"ACK")
     print("players: "+str(players_array)+"\n")
-    
-    
+    model.player = players
     
     model.map.width = pickle.loads(socket.recv(1500))
     socket.send(b"ACK")
@@ -80,10 +82,16 @@ def receive_map(model, socket): #recepteur, ie server
     socket.send(b"ACK")
     print("setting received data to the map from the model")
     
-    model.characters = characters
-    model.fruits = fruits
-    model.bombs = bombs
-    #model.player = players
+
+
+def send_nickname(nick, socket):
+    print("Send nickname to the server ..."+"\n")
+    socket.sendall(b"sending_nick")
+    socket.recv(1500)
+
+    print("sending is value")
+    socket.sendall(pickle.dumps(nick))
+    socket.recv(1500)
     
 port = int(sys.argv[2])
 nickname = sys.argv[3]
@@ -97,10 +105,12 @@ pygame.font.init()
 clock = pygame.time.Clock()
 
 model = Model()
-model.load_map(DEFAULT_MAP) # TODO: the map, fruits and players should be received from server by network.
+#model.load_map(DEFAULT_MAP) # TODO: the map, fruits and players should be received from server by network.
+send_nickname(nickname, s)
 receive_map(model,s)
-print("width:" + str(model.map.width) + "height: "+ str(model.map.height))
+
 view = GraphicView(model, nickname)
+
 client = NetworkClientController(model, host, port, nickname)
 kb = KeyboardController(client)
 
