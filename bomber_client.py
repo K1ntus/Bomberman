@@ -34,45 +34,56 @@ if not os.system("ping -c 1 " + host) is 0:
 '''
 
 def receive_map(model, socket): #recepteur, ie server
-    print("Receiving map ...")
+    print("Receiving map ..."+"\n")
+    socket.sendall(b"send_map")
 
-    #print("Receiving characters ...")
-    characters = socket.recv(1500)
+    print("Receiving characters ...")
+    characters = pickle.loads(socket.recv(1500))
     if not characters: characters_array = []
     else:
-        characters_array = pickle.loads(characters)
-    #socket.send(b"ACK")
-    print("Characters: "+str(characters_array))
+        characters_array = characters
+    socket.send(b"ACK")
+    print("characters: "+str(characters_array)+"\n")
 
     print("Receiving fruits ...")
-    fruits = socket.recv(1500)
+    fruits = pickle.loads(socket.recv(1500))
     if not fruits: fruits_array = []
     else:
-        fruits_array = pickle.loads(fruits)
-    #socket.sendall(b"ACK")
-    print("fruits: "+str(fruits_array))
+        fruits_array = fruits
+    socket.sendall(b"ACK")
+    print("fruits: "+str(fruits_array)+"\n")
 
     print("Receiving bombs ...")
-    bombs = socket.recv(1500)
+    bombs = pickle.loads(socket.recv(1500))
     if not bombs: bombs_array = []
     else:
-        bombs_array = pickle.loads(bombs)
-    #socket.send(b"ACK")
-    print("bombs: "+str(bombs_array))
-
+        bombs_array = bombs
+    socket.send(b"ACK")
+    print("bombs: "+str(bombs_array)+"\n")
+    
     print("Receiving players ...")
-    players = socket.recv(1500)
+    players = pickle.loads(socket.recv(1500))
+    print("players: "+str(players))
     if not players: players_array = []
     else:
-        players_array = pickle.loads(players)
-    #socket.send(b"ACK")
-    print("players: "+str(players_array))
-            
+        players_array = players
+    socket.send(b"ACK")
+    print("players: "+str(players_array)+"\n")
     
-    model.characters = characters.decode()
-    model.fruits = fruits.decode()
-    model.bombs = bombs.decode()
-    model.player = players.decode()
+    
+    
+    model.map.width = pickle.loads(socket.recv(1500))
+    socket.send(b"ACK")
+    model.map.height = pickle.loads(socket.recv(1500))
+    socket.send(b"ACK")
+    model.map.array = pickle.loads(socket.recv(1500))
+    socket.send(b"ACK")
+    print("setting received data to the map from the model")
+    
+    model.characters = characters
+    model.fruits = fruits
+    model.bombs = bombs
+    #model.player = players
     
 port = int(sys.argv[2])
 nickname = sys.argv[3]
@@ -88,7 +99,7 @@ clock = pygame.time.Clock()
 model = Model()
 model.load_map(DEFAULT_MAP) # TODO: the map, fruits and players should be received from server by network.
 receive_map(model,s)
-
+print("width:" + str(model.map.width) + "height: "+ str(model.map.height))
 view = GraphicView(model, nickname)
 client = NetworkClientController(model, host, port, nickname)
 kb = KeyboardController(client)
