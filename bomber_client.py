@@ -115,8 +115,8 @@ model = Model()
 #model.load_map(DEFAULT_MAP) # TODO: the map, fruits and players should be received from server by network.
 
 send_nickname(nickname, s)
-receive_map(model,s)
-print("Sent ACK on map loading\n")
+#receive_map(model,s)
+#print("Sent ACK on map loading\n")
 print("*** END OF INITIALISATION ***\n\n")
 
 view = GraphicView(model, nickname)
@@ -130,9 +130,10 @@ while True:
     #receive_map(model,s)
     dt = clock.tick(FPS)
     if not kb.tick(dt): break
-    if not client.tick(dt,socket): break
+    if not client.tick(dt): break
     model.tick(dt)
     view.tick(dt)
+
     
 
 # quit

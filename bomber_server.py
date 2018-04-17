@@ -100,12 +100,10 @@ def receive_player_movement(socket):
     return False
     
     
-            
+
 
 def send_map(socket):
     try:
-        if cmd:
-            socket.send(b"ACK")
         print("Envoie des caractères")
         characters_to_send = pickle.dumps(server.model.characters)
         socket.sendall(characters_to_send)
@@ -141,7 +139,8 @@ def send_map(socket):
         map_array_to_send = pickle.dumps(server.model.map.array)
         socket.sendall(map_array_to_send)
         socket.recv(1500)
-        
+
+        print("Map sent ! ")
     except OSError as e:
         print("A socket disconnected: "+str(e))
     
@@ -174,19 +173,19 @@ cmd = False
 while True:
     # make sure game doesn't run at more than FPS frames per second
     dt = clock.tick(FPS)
-    server.tick(dt)
     model.tick(dt)
     # view.tick(dt)
     
     (readable_socket, a,b) = select.select(socket_list, [],[])  #Work like a crossroad
     #print("socket list : "+ str(socket_list) )
-    for i in readable_socket:   #for each socket on the list
-        if i == s:  #if the socket is the listening one
+    for i in readable_socket:                   #for each socket on the list
+        if i == s:                              #if the socket is the listening one
             (con,addr)=i.accept()               #we get the information (ie. socket and address) and accept his connection request
             socket_list.append(con)             #we had the socket to the socket list
             (socket_ip,a,b,c)=i.getsockname()
             server.socket.append(con)
             server.clients.append(con)
+            cmd = True
         else:                           #else we get the data
             data = i.recv(1500)         #We receive the data of a length of 1500Bytes
             print("Data: " + str(data))
@@ -198,19 +197,17 @@ while True:
                     i.send(b'ACK')
                     print("gonna send nick, ack has been sent")
                     adding_new_nick(i)
-                    
-                if data == b"moving":
+                elif data == b"moving":
                     i.send(b'ACK')
                     receive_player_movement(i)
 
-                    
-                send_map(i)
                 
             except IndexError:
                 eof=True
             except AttributeError:
                 eof=True
 
+    server.tick(dt)
 
 # quit
 print("Game Over!")

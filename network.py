@@ -21,7 +21,9 @@ class NetworkServerController:
     # time event
 
     def tick(self, dt):
-        #print("clients list: "+str(self.clients))
+        for i in self.socket:
+            i.sendall(b'sending_map')
+            i.recv(1500)
         return True
 
 ################################################################################
@@ -40,6 +42,58 @@ class NetworkClientController:
         self.player = None
         self.socket = socket
 
+
+    def receive_map(self,):
+        print("Receiving map ...")
+
+
+        print("Receiving characters ...")
+        characters = pickle.loads(self.socket.recv(1500))
+        if not characters: characters_array = []
+        else:
+            characters_array = characters
+        self.socket.send(b"ACK")
+        #print("characters: "+str(characters_array)+"\n")
+        self.model.characters = characters
+
+        print("Receiving fruits ...")
+        fruits = pickle.loads(self.socket.recv(1500))
+        if not fruits: fruits_array = []
+        else:
+            fruits_array = fruits
+        self.socket.sendall(b"ACK")
+        #print("fruits: "+str(fruits_array)+"\n")
+        self.model.fruits = fruits
+
+        print("Receiving bombs ...")
+        bombs = pickle.loads(self.socket.recv(1500))
+        if not bombs: bombs_array = []
+        else:
+            bombs_array = bombs
+        self.socket.send(b"ACK")
+        #print("bombs: "+str(bombs_array)+"\n")
+        self.model.bombs = bombs
+        
+        print("Receiving players ...")
+        players = pickle.loads(self.socket.recv(1500))
+        #print("players: "+str(players))
+        if not players: players_array = []
+        else:
+            players_array = players
+        self.socket.send(b"ACK")
+        #print("players: "+str(players_array)+"\n")
+        self.model.player = players
+
+        print("Receiving map data ...")
+        model.map.width = pickle.loads(self.socket.recv(1500))
+        self.socket.send(b"ACK")
+        model.map.height = pickle.loads(self.socket.recv(1500))
+        self.socket.send(b"ACK")
+        model.map.array = pickle.loads(self.socket.recv(1500))
+        self.socket.send(b"ACK")
+        #print("setting received data to the map from the model")
+
+        
     # keyboard events
     def keyboard_quit(self):
         print("=> event \"quit\"")
@@ -89,7 +143,13 @@ class NetworkClientController:
 
             
     # time event
-    def tick(self, dt, socket):#a chaque tick on envoie les nouvelles info au serveur
-        #print("SOCKET: "+str(self.socket))
+    def tick(self, dt):#a chaque tick on envoie les nouvelles info au serveur
+        
+        data = self.socket.recv(1500)
+        print ("DATA: -----> "+data)
+        if data == b'sending_map':
+            print("blabla")
+            self.socket.send(b'ACK')
+            self.receive_map()
 
         return True
