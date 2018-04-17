@@ -34,10 +34,9 @@ if not os.system("ping -c 1 " + host) is 0:
     sys.exit()
 '''
 
-'''
 def receive_map(model, socket):
-    print("Receivi-ng map ..."+"\n")
-    socket.sendall(b"send_map")
+    print("Receiving map ...")
+
 
     print("Receiving characters ...")
     characters = pickle.loads(socket.recv(1500))
@@ -73,9 +72,10 @@ def receive_map(model, socket):
     else:
         players_array = players
     socket.send(b"ACK")
-    print("players: "+str(players_array)+"\n")
+    #print("players: "+str(players_array)+"\n")
     model.player = players
-    
+
+    print("Receiving map data ...")
     model.map.width = pickle.loads(socket.recv(1500))
     socket.send(b"ACK")
     model.map.height = pickle.loads(socket.recv(1500))
@@ -84,24 +84,22 @@ def receive_map(model, socket):
     socket.send(b"ACK")
     #print("setting received data to the map from the model")
     
-'''
-def which_map(socket):
-    data = socket.recv(1500)
-    map_file = data.decode('utf8')
-    print(map_file)
-    return map_file
-
 
 
 def send_nickname(nick, socket):
+    print("Sending my nickname to the server...")
     #print("Send nickname to the server ..."+"\n")
     socket.sendall(b"sending_nick")
     socket.recv(1500)
 
+
     #print("sending is value")
     socket.sendall(pickle.dumps(nick))
     socket.recv(1500)
+    print("Sent ACK on nickname initialisation\n")
+
     
+print("\n\n\n*** INITIALISATION ***\n\n")
 port = int(sys.argv[2])
 nickname = sys.argv[3]
 
@@ -114,29 +112,28 @@ pygame.font.init()
 clock = pygame.time.Clock()
 
 model = Model()
-
-
 #model.load_map(DEFAULT_MAP) # TODO: the map, fruits and players should be received from server by network.
+
 send_nickname(nickname, s)
-#receive_map(model,s)
+receive_map(model,s)
+print("Sent ACK on map loading\n")
+print("*** END OF INITIALISATION ***\n\n")
 
 view = GraphicView(model, nickname)
 
 client = NetworkClientController(model, host, port, nickname, s)
 kb = KeyboardController(client)
 
-use_map =  which_map(s)
-
 # main loop
 while True:
     # make sure game doesn't run at more than FPS frames per second
     #receive_map(model,s)
-    model.load_map(use_map)
     dt = clock.tick(FPS)
     if not kb.tick(dt): break
     if not client.tick(dt,socket): break
     model.tick(dt)
     view.tick(dt)
+    
 
 # quit
 print("Game Over!")

@@ -21,7 +21,7 @@ class NetworkServerController:
     # time event
 
     def tick(self, dt):
-        print("clients list: "+str(self.clients))
+        #print("clients list: "+str(self.clients))
         return True
 
 ################################################################################
@@ -69,16 +69,25 @@ class NetworkClientController:
         return character
     
     def i_just_moved(self, socket, direction):
-        print("******* S ********\nSend moving information to server ..."+"\n")
-        socket.sendall(b'moving')
-        socket.recv(1500)
-        print("received ACK")
-        packet = bytes(str(direction), 'utf8')
-        socket.sendall(packet)
-        print("received ACK")
-        print("direction sent with value "+str((packet))+"\n******** E *******\n")
-        #self.socket.recv(1500)
-        
+            print("\n\n******* S******* \nSend moving information to server ..."+"\n")
+            
+            socket.sendall(b'moving')
+            data = socket.recv(1500)
+            
+            print("received ACK for moving my char from the server:  " + str(data))
+            
+            packet = bytes(str(direction), 'utf8')
+            socket.sendall(packet)
+
+
+            data=socket.recv(1500)
+            print("received "+ str(data))
+            
+            print("direction sent with value "+str((packet))+"\n******* E******* \n\n")
+            
+            #self.socket.recv(1500)
+
+            
     # time event
     def tick(self, dt, socket):#a chaque tick on envoie les nouvelles info au serveur
         #print("SOCKET: "+str(self.socket))

@@ -59,83 +59,89 @@ def disconnect(socket_list, socket):
     delete_player(socket)
     remove_socket(socket_list, socket)
     
-def adding_new_nick(model, socket):
-    socket.send(b"ACK")
+def adding_new_nick(socket):
+    
     (ip,a,b,c)=socket.getsockname()  
     nick_wanted=pickle.loads(socket.recv(1500))#attribute the nick parameters to this ip
     socket.send(b"ACK")
     
     new_nick_wanted = nick_wanted
     i=0
-    while not model.look(new_nick_wanted) == None:
+    while not server.model.look(new_nick_wanted) == None:
         new_nick_wanted = nick_wanted+str(i)
         i=i+1
     nick_dictionnary[ip] = new_nick_wanted
-    model.add_character(nick_dictionnary[ip], True)
+    server.model.add_character(nick_dictionnary[ip], True)
         
 
-def receive_player_movement(model, socket):
-    print("sending ack packet")
-    socket.send(b"ACK")
-    print("ack packet received from remote host")
+def receive_player_movement(socket):
+    print("IM on the moving function ")
 
     (ip,a,b,c) = socket.getsockname()
     username = nick_dictionnary[ip]
-    for i in model:
-        if look(model,username):
-            
-    
-            print("MOVING A CHARACTER !\n\n")
-            movement = socket.recv(1500)#attribute the nick parameters to this ip
-            socket.send(b"ACK")
-            print("I received the order to move to: "+ movement.decode())
-            model.move_character(username, int(movement.decode()))
-            return True
+
+    movement = socket.recv(1500)
+    print("MOVING THE CHARACTER: "+ str(username) + "\n\n")
+    print("MOVEMENT: "+str(movement) + " --> " + str(movement.decode()))
+    socket.send(b"ACK")
+    print("MOVING: Sent ACK")
+        
+    if server.model.look(username):
+                
+
+        print("I received the order to move to: "+ movement.decode())
+        try:
+            server.model.move_character(username, int(movement.decode()))
+        except ValueError as e:
+            print("Packet error: "+str(e))
+            return False
+        return True
+    print("Unable to find the character:  "+username)
     return False
     
     
             
-def send_map_v2 (map_name, socket):
-    #socket.send(b'ACK')
-    data_to_send = map_name.encode('utf8')
-    print(data_to_send)
-    s.send(data_to_send)
-    
-def send_map(model, socket):
-    try:
-        #print("Envoie des caractères")
-        characters_to_send = pickle.dumps(model.characters)
-        socket.sendall(characters_to_send)
-        
-        socket.recv(1500)
-        #print("Envoie des fruit")
-        fruits_to_send = pickle.dumps(model.fruits)
-        socket.sendall(fruits_to_send)
 
+def send_map(socket):
+    try:
+        if cmd:
+            socket.send(b"ACK")
+        print("Envoie des caractères")
+        characters_to_send = pickle.dumps(server.model.characters)
+        socket.sendall(characters_to_send)
         socket.recv(1500)
-        #print("Envoie des position de bombes")
-        bombs_to_send = pickle.dumps(model.bombs)
+        
+        print("Envoie des fruit")
+        fruits_to_send = pickle.dumps(server.model.fruits)
+        socket.sendall(fruits_to_send)
+        socket.recv(1500)
+
+        print("Envoie des position de bombes")
+        bombs_to_send = pickle.dumps(server.model.bombs)
         socket.sendall(bombs_to_send)
-        
         socket.recv(1500)
-        #print("Envoie des player_to_send ")
-        player_to_send = pickle.dumps(model.player)
+        
+        print("Envoie des player_to_send ")
+        player_to_send = pickle.dumps(server.model.player)
         socket.sendall(player_to_send)
-        
         socket.recv(1500)
-        #print("Envoie des data de la map")
-        map_width = pickle.dumps(model.map.width)
+        
+        print("Envoie des data de la map")
+        print("   -> map width")
+        map_width = pickle.dumps(server.model.map.width)
         socket.sendall(map_width)
-        
         socket.recv(1500)
-        map_height = pickle.dumps(model.map.height)
+
+        print("   -> map height")
+        map_height = pickle.dumps(server.model.map.height)
         socket.sendall(map_height)
-        
         socket.recv(1500)
-        map_array_to_send = pickle.dumps(model.map.array)
+        
+        print("   -> map board")
+        map_array_to_send = pickle.dumps(server.model.map.array)
         socket.sendall(map_array_to_send)
-        
         socket.recv(1500)
+        
     except OSError as e:
         print("A socket disconnected: "+str(e))
     
@@ -160,7 +166,7 @@ model.load_map(map_file)
 for _ in range(10): model.add_fruit()
 server = NetworkServerController(model, port)
 
-
+cmd = False
 
 
 
@@ -181,26 +187,25 @@ while True:
             (socket_ip,a,b,c)=i.getsockname()
             server.socket.append(con)
             server.clients.append(con)
-            print(model)
-        else:   #else we get the data
-            data = i.recv(1500) #We receive the data of a length of 1500Bytes
+        else:                           #else we get the data
+            data = i.recv(1500)         #We receive the data of a length of 1500Bytes
             print("Data: " + str(data))
+            
             if not data or data == '\n' or data == b'':
                 disconnect(socket_list, i)
             try:
                 if data == b"sending_nick":
-                    adding_new_nick(server.model, i)
-                    '''
-                    if not(nick_dictionnary[socket_ip] == "server"):
-                        model.add_character(nick_dictionnary[socket_ip], True)
-                    '''
-                #elif data == b"send_map":
-                    #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
-                if data == b"send_map_plz_dude":
-                    send_map_v2(map_file, i)
+                    i.send(b'ACK')
+                    print("gonna send nick, ack has been sent")
+                    adding_new_nick(i)
+                    
                 if data == b"moving":
-                    #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
-                    receive_player_movement(server.model, i)
+                    i.send(b'ACK')
+                    receive_player_movement(i)
+
+                    
+                send_map(i)
+                
             except IndexError:
                 eof=True
             except AttributeError:
