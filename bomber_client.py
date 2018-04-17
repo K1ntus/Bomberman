@@ -34,8 +34,9 @@ if not os.system("ping -c 1 " + host) is 0:
     sys.exit()
 '''
 
+'''
 def receive_map(model, socket):
-    print("Receiving map ..."+"\n")
+    print("Receivi-ng map ..."+"\n")
     socket.sendall(b"send_map")
 
     print("Receiving characters ...")
@@ -83,6 +84,13 @@ def receive_map(model, socket):
     socket.send(b"ACK")
     #print("setting received data to the map from the model")
     
+'''
+def which_map(socket):
+    data = socket.recv(1500)
+    map_file = data.decode('utf8')
+    print(map_file)
+    return map_file
+
 
 
 def send_nickname(nick, socket):
@@ -106,19 +114,24 @@ pygame.font.init()
 clock = pygame.time.Clock()
 
 model = Model()
+
+
 #model.load_map(DEFAULT_MAP) # TODO: the map, fruits and players should be received from server by network.
 send_nickname(nickname, s)
-receive_map(model,s)
+#receive_map(model,s)
 
 view = GraphicView(model, nickname)
 
 client = NetworkClientController(model, host, port, nickname, s)
 kb = KeyboardController(client)
 
+use_map =  which_map(s)
+
 # main loop
 while True:
     # make sure game doesn't run at more than FPS frames per second
     #receive_map(model,s)
+    model.load_map(use_map)
     dt = clock.tick(FPS)
     if not kb.tick(dt): break
     if not client.tick(dt,socket): break

@@ -95,7 +95,12 @@ def receive_player_movement(model, socket):
     
     
             
-
+def send_map_v2 (map_name, socket):
+    #socket.send(b'ACK')
+    data_to_send = map_name.encode('utf8')
+    print(data_to_send)
+    s.send(data_to_send)
+    
 def send_map(model, socket):
     try:
         #print("Envoie des caractères")
@@ -176,6 +181,7 @@ while True:
             (socket_ip,a,b,c)=i.getsockname()
             server.socket.append(con)
             server.clients.append(con)
+            print(model)
         else:   #else we get the data
             data = i.recv(1500) #We receive the data of a length of 1500Bytes
             print("Data: " + str(data))
@@ -183,17 +189,18 @@ while True:
                 disconnect(socket_list, i)
             try:
                 if data == b"sending_nick":
-                    adding_new_nick(model, i)
+                    adding_new_nick(server.model, i)
                     '''
                     if not(nick_dictionnary[socket_ip] == "server"):
                         model.add_character(nick_dictionnary[socket_ip], True)
                     '''
                 #elif data == b"send_map":
                     #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
-                send_map(model, i)
+                if data == b"send_map_plz_dude":
+                    send_map_v2(map_file, i)
                 if data == b"moving":
                     #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
-                    receive_player_movement(model, i)
+                    receive_player_movement(server.model, i)
             except IndexError:
                 eof=True
             except AttributeError:
