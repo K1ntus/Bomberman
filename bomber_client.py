@@ -44,7 +44,7 @@ def receive_map(model, socket):
     else:
         characters_array = characters
     socket.send(b"ACK")
-    print("characters: "+str(characters_array)+"\n")
+    #print("characters: "+str(characters_array)+"\n")
     model.characters = characters
 
     print("Receiving fruits ...")
@@ -53,7 +53,7 @@ def receive_map(model, socket):
     else:
         fruits_array = fruits
     socket.sendall(b"ACK")
-    print("fruits: "+str(fruits_array)+"\n")
+    #print("fruits: "+str(fruits_array)+"\n")
     model.fruits = fruits
 
     print("Receiving bombs ...")
@@ -62,12 +62,12 @@ def receive_map(model, socket):
     else:
         bombs_array = bombs
     socket.send(b"ACK")
-    print("bombs: "+str(bombs_array)+"\n")
+    #print("bombs: "+str(bombs_array)+"\n")
     model.bombs = bombs
     
     print("Receiving players ...")
     players = pickle.loads(socket.recv(1500))
-    print("players: "+str(players))
+    #print("players: "+str(players))
     if not players: players_array = []
     else:
         players_array = players
@@ -81,16 +81,16 @@ def receive_map(model, socket):
     socket.send(b"ACK")
     model.map.array = pickle.loads(socket.recv(1500))
     socket.send(b"ACK")
-    print("setting received data to the map from the model")
+    #print("setting received data to the map from the model")
     
 
 
 def send_nickname(nick, socket):
-    print("Send nickname to the server ..."+"\n")
+    #print("Send nickname to the server ..."+"\n")
     socket.sendall(b"sending_nick")
     socket.recv(1500)
 
-    print("sending is value")
+    #print("sending is value")
     socket.sendall(pickle.dumps(nick))
     socket.recv(1500)
     
@@ -118,6 +118,7 @@ kb = KeyboardController(client)
 # main loop
 while True:
     # make sure game doesn't run at more than FPS frames per second
+    #receive_map(model,s)
     dt = clock.tick(FPS)
     if not kb.tick(dt): break
     if not client.tick(dt,socket): break

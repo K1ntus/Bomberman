@@ -9,7 +9,7 @@ import sys
 import pygame
 import random
 import socket
-import pickle #send array over sockets
+import pickle #send array over sockets ##RICK
 import select
 import errno
 
@@ -81,50 +81,58 @@ def receive_player_movement(model, socket):
 
     (ip,a,b,c) = socket.getsockname()
     username = nick_dictionnary[ip]
+    for i in model:
+        if look(model,username):
+            
     
-    movement = socket.recv(1500)#attribute the nick parameters to this ip
-    socket.send(b"ACK")
-    print("I received the order to move to: "+ movement.decode())
-    model.move_character(username, int(movement.decode()))
+            print("MOVING A CHARACTER !\n\n")
+            movement = socket.recv(1500)#attribute the nick parameters to this ip
+            socket.send(b"ACK")
+            print("I received the order to move to: "+ movement.decode())
+            model.move_character(username, int(movement.decode()))
+            return True
+    return False
     
     
             
 
 def send_map(model, socket):
-    
-    #print("Envoie des caractères")
-    characters_to_send = pickle.dumps(model.characters)
-    socket.sendall(characters_to_send)
-    
-    socket.recv(1500)
-    #print("Envoie des fruit")
-    fruits_to_send = pickle.dumps(model.fruits)
-    socket.sendall(fruits_to_send)
+    try:
+        #print("Envoie des caractères")
+        characters_to_send = pickle.dumps(model.characters)
+        socket.sendall(characters_to_send)
+        
+        socket.recv(1500)
+        #print("Envoie des fruit")
+        fruits_to_send = pickle.dumps(model.fruits)
+        socket.sendall(fruits_to_send)
 
-    socket.recv(1500)
-    #print("Envoie des position de bombes")
-    bombs_to_send = pickle.dumps(model.bombs)
-    socket.sendall(bombs_to_send)
-    
-    socket.recv(1500)
-    #print("Envoie des player_to_send ")
-    player_to_send = pickle.dumps(model.player)
-    socket.sendall(player_to_send)
-    
-    socket.recv(1500)
-    #print("Envoie des data de la map")
-    map_width = pickle.dumps(model.map.width)
-    socket.sendall(map_width)
-    
-    socket.recv(1500)
-    map_height = pickle.dumps(model.map.height)
-    socket.sendall(map_height)
-    
-    socket.recv(1500)
-    map_array_to_send = pickle.dumps(model.map.array)
-    socket.sendall(map_array_to_send)
-    
-    socket.recv(1500)
+        socket.recv(1500)
+        #print("Envoie des position de bombes")
+        bombs_to_send = pickle.dumps(model.bombs)
+        socket.sendall(bombs_to_send)
+        
+        socket.recv(1500)
+        #print("Envoie des player_to_send ")
+        player_to_send = pickle.dumps(model.player)
+        socket.sendall(player_to_send)
+        
+        socket.recv(1500)
+        #print("Envoie des data de la map")
+        map_width = pickle.dumps(model.map.width)
+        socket.sendall(map_width)
+        
+        socket.recv(1500)
+        map_height = pickle.dumps(model.map.height)
+        socket.sendall(map_height)
+        
+        socket.recv(1500)
+        map_array_to_send = pickle.dumps(model.map.array)
+        socket.sendall(map_array_to_send)
+        
+        socket.recv(1500)
+    except OSError as e:
+        print("A socket disconnected: "+str(e))
     
 
 # initialization
@@ -165,7 +173,9 @@ while True:
         if i == s:  #if the socket is the listening one
             (con,addr)=i.accept()               #we get the information (ie. socket and address) and accept his connection request
             socket_list.append(con)             #we had the socket to the socket list
-            (socket_ip,a,b,c)=i.getsockname()        
+            (socket_ip,a,b,c)=i.getsockname()
+            server.socket.append(con)
+            server.clients.append(con)
         else:   #else we get the data
             data = i.recv(1500) #We receive the data of a length of 1500Bytes
             print("Data: " + str(data))
@@ -174,8 +184,10 @@ while True:
             try:
                 if data == b"sending_nick":
                     adding_new_nick(model, i)
+                    '''
                     if not(nick_dictionnary[socket_ip] == "server"):
                         model.add_character(nick_dictionnary[socket_ip], True)
+                    '''
                 #elif data == b"send_map":
                     #i.sendall(model.characters.encode()+"\n"+model.fruits.encode()+"\n"+model.bombs.encode()+"\n"+model.player.encode())
                 send_map(model, i)

@@ -16,14 +16,12 @@ class NetworkServerController:
         self.model = model
         self.port = port
         self.clients = []
-        #   ...
+        self.socket = []
 
     # time event
 
     def tick(self, dt):
-        #NetworkClientController.add_client_to_server()
-        for i in self.clients:
-            i.model = self.model
+        print("clients list: "+str(self.clients))
         return True
 
 ################################################################################
@@ -54,7 +52,7 @@ class NetworkClientController:
         self.nickname = self.model.player.nickname
         if direction in DIRECTIONS:
             self.model.move_character(self.nickname, direction)
-            self.i_just_moved(direction)
+            self.i_just_moved(self.socket,direction)
         return True
 
     def keyboard_drop_bomb(self):
@@ -70,36 +68,19 @@ class NetworkClientController:
         character = next( (c for c in self.characters if (c.nickname == nickname)), None) # first occurence
         return character
     
-    def i_just_moved(self, direction):
-        print("Send moving information to server ..."+"\n")
-        self.socket.sendall(b"moving")
-        self.socket.recv(1500)
-
+    def i_just_moved(self, socket, direction):
+        print("******* S ********\nSend moving information to server ..."+"\n")
+        socket.sendall(b'moving')
+        socket.recv(1500)
+        print("received ACK")
         packet = bytes(str(direction), 'utf8')
-        self.socket.sendall(packet)
-        self.socket.recv(1500)
-        print("direction sent with value "+str((packet))+"\n")
+        socket.sendall(packet)
+        print("received ACK")
+        print("direction sent with value "+str((packet))+"\n******** E *******\n")
         #self.socket.recv(1500)
         
     # time event
     def tick(self, dt, socket):#a chaque tick on envoie les nouvelles info au serveur
-        #NetworkServerController.clients = add_client_to_server(self.nickname)
-        event = KeyboardController.tick(self,dt)
-        if event == False:
-            self.model=NetworkServerController.model
-        elif event == True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    print("exit")
-                    return False
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    print("exit")
-                    return False
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    print("dropping bomb")
-                    print(event.type)
-                    self.model.drop_bomb(self.model, self.nickname)
+        #print("SOCKET: "+str(self.socket))
 
-
-            return True
-        return None
+        return True
