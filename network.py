@@ -53,8 +53,8 @@ class NetworkServerController:
             print("No such key to remove (nickname on leave)")
             pass
         socket.close()                      #close the socket
-
-    def receive_player_movement(self,socket):
+        
+    '''def receive_player_movement(self,socket):
         print("sending ack packet")
         socket.send(b"ACK")
         print("ack packet received from remote host")
@@ -65,7 +65,19 @@ class NetworkServerController:
         movement = socket.recv(1500)#attribute the nick parameters to this ip
         socket.send(b"ACK")
         print("I received the order to move to: "+ movement.decode())
-        model.move_character(username, int(movement.decode()))  
+        model.move_character(username, int(movement.decode()))
+        mov = int(movement.decode())
+        self.model.characters.moves(truc truc truc)'''
+
+
+    def receive_player_movement(self,socket):
+        direction = socket.decode(socket.recv(1500))
+        (ip,a,b,c) = socket.getsockname()
+        username = nick_dictionnary[ip]
+        print("Changing the move to the direction: "+ movement.decode())
+        self.model.characters.move_character(self, username, direction)
+        return True
+        
     
     # time event
     def send_map(self, socket):
@@ -225,8 +237,7 @@ class NetworkClientController:
 
     def keyboard_move_character(self, direction):
         print("=> event \"keyboard move direction\" {}".format(DIRECTIONS_STR[direction]))
-        # ...
-        self.s.send(direction.encode())
+        self.s.send(str(direction).encode())
         self.s.recv(1500)
         return True
 
