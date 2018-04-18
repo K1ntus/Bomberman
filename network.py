@@ -19,7 +19,7 @@ class NetworkServerController:
         self.s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         self.s.setblocking(False)
         self.s.bind(('',port))
-        self.s.listen(2)
+        self.s.listen(1)
         
         self.liste_socket = [self.s]
         
@@ -62,6 +62,19 @@ class NetworkServerController:
         socket.send(packet_to_send)
         print("Packet received: "+str(socket.recv(1500)))
         print("Map well sent ! Hourra !")
+
+    def receive_player_movement(self,socket):
+        print("sending ack packet")
+        socket.send(b"ACK")
+        print("ack packet received from remote host")
+
+        (ip,a,b,c) = socket.getsockname()
+        username = nick_dictionnary[ip]
+        
+        movement = socket.recv(1500)#attribute the nick parameters to this ip
+        socket.send(b"ACK")
+        print("I received the order to move to: "+ movement.decode())
+        model.move_character(username, int(movement.decode()))        
         
     def tick(self, dt):
 	# creation of sockets + connexion
@@ -127,9 +140,10 @@ class NetworkClientController:
         print("=> event \"quit\"")
         return False
 
-    def keyboard_move_character(self, direction):
+    def keyboard_move_character(self, s_server, direction):
         print("=> event \"keyboard move direction\" {}".format(DIRECTIONS_STR[direction]))
-        # ...
+        s_server.send(direction.encode())
+        s_server.recv(1500)
         return True
 
     def keyboard_drop_bomb(self):
