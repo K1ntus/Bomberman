@@ -101,6 +101,16 @@ class NetworkServerController:
 
                         self.model.characters[inc] = data
                     inc = inc+1
+                    
+                
+    def receive_bomb_position(self, socket):
+        (ip,a,b,c) = socket.getsockname()
+        data = pickle.loads(socket.recv(1500))
+        socket.send(b'ACK')
+        
+        for bomb in self.model.bombs:
+            for bomb_to_check in data:
+                print("a")
                 
 
     def first_connection(self, socket, nick_wanted):
@@ -256,8 +266,18 @@ class NetworkClientController:
         
         print("| Map well received\n---\n")
 
+    def send_bomb_data(self):
+        bombs_to_send = pickle.dumps(self.model.bombs)
+        self.s.sendall(bombs_to_send)
+        self.s.recv(1500)
         
-
+    def send_my_pos(self):
+        print("\n---\n| Sending my position\n")
+        self.s.send(pickle.dumps(self.model.characters[0]))
+        print("| Position sent")
+        self.s.recv(1500)
+        print("| Received ACK\n---\n")
+        
     # keyboard events
 
     def keyboard_quit(self):
@@ -273,32 +293,32 @@ class NetworkClientController:
             #self.s.recv(1500)
         return True
     
-    def send_my_pos(self):
-        print("\n---\n| Sending my position\n")
-        self.s.send(pickle.dumps(self.model.characters[0]))
-        print("| Position sent")
-        self.s.recv(1500)
-        print("| Received ACK\n---\n")
         
     def keyboard_drop_bomb(self):
         print("=> event \"keyboard drop bomb\"")
+        if not self.model.player: return True
+        nickname = self.model.player.nickname
+        self.model.drop_bomb(nickname)
         return True
 
     # time event
 
     def tick(self, dt):
         
-
         self.s.send(b'ACK')
+
+
         self.send_my_pos()
-
-
         self.s.send(b'ACK')
         self.s.recv(1500)
+
+
+        #self.send_bomb_data()
+        #self.s.send(b'ACK')
+        #self.s.recv(1500)
+
         
-        print("CHARACTERS: "+str(self.model.characters[0].pos))
         self.receive_map(self.model)
-        
         self.s.send(b'ACK')
         self.s.recv(1500)
 
