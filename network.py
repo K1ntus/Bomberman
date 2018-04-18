@@ -93,7 +93,6 @@ class NetworkServerController:
                 print("FOUND THE SOCKET")
                 inc = 0
                 for j in self.model.characters:
-                    inc = inc+1
                     if j.nickname == self.nick_dictionnary[i]:
                         print("FOUND THE CHARACTER")
                         data = pickle.loads(socket.recv(1500))
@@ -101,6 +100,7 @@ class NetworkServerController:
                         socket.send(b'ACK')
 
                         self.model.characters[inc] = data
+                    inc = inc+1
         time.sleep(1)
                 
 
@@ -191,12 +191,13 @@ class NetworkClientController:
         print("\n---\n| Receiving map")
 
         print("| Receiving characters ...")
+        
         characters = pickle.loads(self.s.recv(1500))
         if not characters: characters_array = []
         else:
             characters_array = characters
         self.s.send(b"ACK")
-        #print("characters: "+str(characters_array)+"\n")
+        print("characters: "+str(characters_array)+"\n")
         model.characters = characters
 
         print("| Receiving fruits ...")
@@ -205,7 +206,7 @@ class NetworkClientController:
         else:
             fruits_array = fruits
         self.s.sendall(b"ACK")
-        #print("fruits: "+str(fruits_array)+"\n")
+        print("fruits: "+str(fruits_array)+"\n")
         model.fruits = fruits
 
         print("| Receiving bombs ...")
@@ -214,7 +215,7 @@ class NetworkClientController:
         else:
             bombs_array = bombs
         self.s.send(b"ACK")
-        #print("bombs: "+str(bombs_array)+"\n")
+        print("bombs: "+str(bombs_array)+"\n")
         model.bombs = bombs
         
         print("| Receiving players ...")
@@ -224,7 +225,7 @@ class NetworkClientController:
         else:
             players_array = players
         self.s.send(b"ACK")
-        #print("players: "+str(players_array)+"\n")
+        print("players: "+str(players_array)+"\n")
         model.player = players
 
         print("| Receiving map data ...")
