@@ -30,7 +30,6 @@ pygame.display.init()
 pygame.font.init()
 clock = pygame.time.Clock()
 model = Model()
-model.load_map(DEFAULT_MAP)
 view = GraphicView(model, nickname)
 client = NetworkClientController(model, host, port, nickname)
 kb = KeyboardController(client)
@@ -42,6 +41,7 @@ while True:
     if not kb.tick(dt): break
     if not client.tick(dt): break
     model.tick(dt)
+    print("LARGEUR = "+ str(model.map.width))
     view.tick(dt)
 
 # quit
