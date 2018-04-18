@@ -53,15 +53,6 @@ class NetworkServerController:
             print("No such key to remove (nickname on leave)")
             pass
         socket.close()                      #close the socket
-    
-    # time event
-    def send_map(self, socket):
-        print("Sending map to: "+str(socket))
-        packet_to_send = pickle.dumps(self.model)
-        print("Will send: "+str(packet_to_send))
-        socket.send(packet_to_send)
-        print("Packet received: "+str(socket.recv(1500)))
-        print("Map well sent ! Hourra !")
 
     def receive_player_movement(self,socket):
         print("sending ack packet")
@@ -74,7 +65,59 @@ class NetworkServerController:
         movement = socket.recv(1500)#attribute the nick parameters to this ip
         socket.send(b"ACK")
         print("I received the order to move to: "+ movement.decode())
-        model.move_character(username, int(movement.decode()))        
+        model.move_character(username, int(movement.decode()))  
+    
+    # time event
+    def send_map(self, socket):
+        print("\nEnvoie de la map ...")
+        try:
+            print("Envoie des caractères")
+            characters_to_send = pickle.dumps(self.model.characters)
+            socket.sendall(characters_to_send)
+            socket.recv(1500)
+            
+            print("Envoie des fruit")
+            fruits_to_send = pickle.dumps(self.model.fruits)
+            socket.sendall(fruits_to_send)
+            socket.recv(1500)
+
+            print("Envoie des position de bombes")
+            bombs_to_send = pickle.dumps(self.model.bombs)
+            socket.sendall(bombs_to_send)
+            socket.recv(1500)
+            
+            print("Envoie des player_to_send ")
+            player_to_send = pickle.dumps(self.model.player)
+            socket.sendall(player_to_send)
+            socket.recv(1500)
+            
+            print("Envoie des data de la map")
+            print("   -> map width")
+            map_width = pickle.dumps(self.model.map.width)
+            socket.sendall(map_width)
+            socket.recv(1500)
+
+            print("   -> map height")
+            map_height = pickle.dumps(self.model.map.height)
+            socket.sendall(map_height)
+            socket.recv(1500)
+            
+            print("   -> map board")
+            map_array_to_send = pickle.dumps(self.model.map.array)
+            socket.sendall(map_array_to_send)
+            socket.recv(1500)
+
+            print("Map sent ! \n")
+        except OSError as e:
+            print("A socket disconnected: "+str(e))
+            self.disconnect(socket)
+            self.liste_socket.remove(socket)
+            return
+        except BrokenPipeError as e:
+            print("A socket disconnected: "+str(e))
+            self.disconnect(socket)
+            self.liste_socket.remove(socket)
+            return
         
     def tick(self, dt):
 	# creation of sockets + connexion
@@ -90,7 +133,12 @@ class NetworkServerController:
                 try:
                     sock.recv(1500)
                     self.send_map(sock)
+                    
                 except BrokenPipeError as e:
+                    print("Client disconnected: "+str(e))
+                    self.disconnect(sock)
+                    self.liste_socket.remove(sock)
+                except ConnectionResetError as e:
                     print("Client disconnected: "+str(e))
                     self.disconnect(sock)
                     self.liste_socket.remove(sock)
@@ -112,25 +160,60 @@ class NetworkClientController:
 
         self.s = socket.socket(family=socket.AF_INET6, type=socket.SOCK_STREAM, proto=0, fileno=None)
         self.s.connect((host, port))
+
         
-        self.s.send(b'nickname')
+        self.s.send(nickname.encode())
         self.s.recv(1500)
 
-    def receive_map(self, host_socket):
-        print("Receiving map ...")
-        packet_received = host_socket.recv(2048)
-        try:
-            packet_received = pickle.loads(packet_received)
-            self.model = packet_received
-            #print("Packet = "+str(packet_received))
-        except EOFError:
-            print("OMG ERROR")
-            data = list()  # or whatever you want
+    def receive_map(self,model):
+        print("\n---\n| Receiving map")
+
+        print("| Receiving characters ...")
+        characters = pickle.loads(self.s.recv(1500))
+        if not characters: characters_array = []
+        else:
+            characters_array = characters
+        self.s.send(b"ACK")
+        #print("characters: "+str(characters_array)+"\n")
+        model.characters = characters
+
+        print("| Receiving fruits ...")
+        fruits = pickle.loads(self.s.recv(1500))
+        if not fruits: fruits_array = []
+        else:
+            fruits_array = fruits
+        self.s.sendall(b"ACK")
+        #print("fruits: "+str(fruits_array)+"\n")
+        model.fruits = fruits
+
+        print("| Receiving bombs ...")
+        bombs = pickle.loads(self.s.recv(1500))
+        if not bombs: bombs_array = []
+        else:
+            bombs_array = bombs
+        self.s.send(b"ACK")
+        #print("bombs: "+str(bombs_array)+"\n")
+        model.bombs = bombs
         
-        print("   -> sending ACK")
-        host_socket.send(b'ACK')
+        print("| Receiving players ...")
+        players = pickle.loads(self.s.recv(1500))
+        #print("players: "+str(players))
+        if not players: players_array = []
+        else:
+            players_array = players
+        self.s.send(b"ACK")
+        #print("players: "+str(players_array)+"\n")
+        model.player = players
+
+        print("| Receiving map data ...")
+        model.map.width = pickle.loads(self.s.recv(1500))
+        self.s.send(b"ACK")
+        model.map.height = pickle.loads(self.s.recv(1500))
+        self.s.send(b"ACK")
+        model.map.array = pickle.loads(self.s.recv(1500))
+        self.s.send(b"ACK")
         
-        print("Map well received ...")
+        print("| Map well received\n---\n")
 
         
 
@@ -140,10 +223,11 @@ class NetworkClientController:
         print("=> event \"quit\"")
         return False
 
-    def keyboard_move_character(self, s_server, direction):
+    def keyboard_move_character(self, direction):
         print("=> event \"keyboard move direction\" {}".format(DIRECTIONS_STR[direction]))
-        s_server.send(direction.encode())
-        s_server.recv(1500)
+        # ...
+        self.s.send(direction.encode())
+        self.s.recv(1500)
         return True
 
     def keyboard_drop_bomb(self):
@@ -155,5 +239,5 @@ class NetworkClientController:
 
     def tick(self, dt):
         self.s.send(b'ACK')
-        self.receive_map(self.s)
+        self.receive_map(self.model)
         return True
