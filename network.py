@@ -90,15 +90,17 @@ class NetworkServerController:
         for i in self.nick_dictionnary:
             print("i= "+str(i)+" | socket= "+str(ip))
             if i == ip and not (ip == "::"):
-                print("FOUND THE SOCKET")  
+                print("FOUND THE SOCKET")
+                inc = 0
                 for j in self.model.characters:
+                    inc = inc+1
                     if j.nickname == self.nick_dictionnary[i]:
                         print("FOUND THE CHARACTER")
                         data = pickle.loads(socket.recv(1500))
                         
                         socket.send(b'ACK')
 
-                        j = data
+                        self.model.characters[inc] = data
         time.sleep(1)
                 
 
@@ -151,6 +153,7 @@ class NetworkServerController:
                                  
                     sock.recv(1500)    
                     sock.send(b'ACK')
+                    
                     self.receive_char_position(sock)
                     
                 except BrokenPipeError as e:
@@ -274,7 +277,7 @@ class NetworkClientController:
 
         self.s.send(b'ACK')
         self.s.recv(1500)
-        #print("CHARACTERS: "+str(self.model.characters[0].pos))
+        print("CHARACTERS: "+str(self.model.characters[0].pos))
         self.send_my_pos()
         
         return True
