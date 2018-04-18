@@ -41,7 +41,6 @@ while True:
     if not kb.tick(dt): break
     if not client.tick(dt): break
     model.tick(dt)
-    print("LARGEUR = "+ str(model.map.width))
     view.tick(dt)
 
 # quit

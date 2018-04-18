@@ -48,11 +48,6 @@ class NetworkServerController:
             socket.sendall(bombs_to_send)
             socket.recv(1500)
             
-            #print("Envoie des player_to_send ")
-            player_to_send = pickle.dumps(self.model.player)
-            socket.sendall(player_to_send)
-            socket.recv(1500)
-            
             #print("Envoie des data de la map")
             #print("   -> map width")
             map_width = pickle.dumps(self.model.map.width)
@@ -105,12 +100,17 @@ class NetworkServerController:
                 
     def receive_bomb_position(self, socket):
         (ip,a,b,c) = socket.getsockname()
+        nickname = self.nick_dictionnary[ip]
+            
         data = pickle.loads(socket.recv(1500))
         socket.send(b'ACK')
         
-        for bomb in self.model.bombs:
-            for bomb_to_check in data:
-                print("a")
+        if not data == 'null':
+            print("DROPPING A BOMB BY:  "+str(nickname))
+            character = self.model.look(nickname)
+            #self.model.drop_bomb(nickname)
+            self.model.bombs.append(Bomb(self.model.map, character.pos))
+                
                 
 
     def first_connection(self, socket, nick_wanted):
@@ -162,7 +162,7 @@ class NetworkServerController:
                 con.recv(1500)    
                 con.send(b'ACK')
             else :
-                print(self.model.player)
+                #print(self.model.player)
                 
                 try:
                     sock.recv(1500)
@@ -170,7 +170,11 @@ class NetworkServerController:
                                  
                     sock.recv(1500)    
                     sock.send(b'ACK')
+                    self.receive_bomb_position(sock)
                     
+                    
+                    sock.recv(1500)    
+                    sock.send(b'ACK')
                     self.send_map(sock)
                     
                     sock.recv(1500)    
@@ -201,6 +205,8 @@ class NetworkClientController:
         self.port = port
         self.nickname = nickname
 
+        self.bomb_to_place = 'null'
+
         self.s = socket.socket(family=socket.AF_INET6, type=socket.SOCK_STREAM, proto=0, fileno=None)
         self.s.connect((host, port))
 
@@ -215,10 +221,12 @@ class NetworkClientController:
         self.s.send(b'ACK')
         self.s.recv(1500)
 
-    def receive_map(self,model):
-        print("\n---\n| Receiving map")
+        self.model.player = self.model.look(nickname)
 
-        print("| Receiving characters ...")
+    def receive_map(self,model):
+        #print("\n---\n| Receiving map")
+
+        #print("| Receiving characters ...")
         
         characters = pickle.loads(self.s.recv(1500))
         if not characters: characters_array = []
@@ -228,7 +236,7 @@ class NetworkClientController:
         #print("characters: "+str(characters_array)+"\n")
         model.characters = characters
 
-        print("| Receiving fruits ...")
+        #print("| Receiving fruits ...")
         fruits = pickle.loads(self.s.recv(1500))
         if not fruits: fruits_array = []
         else:
@@ -237,7 +245,7 @@ class NetworkClientController:
         #print("fruits: "+str(fruits_array)+"\n")
         model.fruits = fruits
 
-        print("| Receiving bombs ...")
+        #print("| Receiving bombs ...")
         bombs = pickle.loads(self.s.recv(1500))
         if not bombs: bombs_array = []
         else:
@@ -246,17 +254,8 @@ class NetworkClientController:
         #print("bombs: "+str(bombs_array)+"\n")
         model.bombs = bombs
         
-        print("| Receiving players ...")
-        players = pickle.loads(self.s.recv(1500))
-        #print("players: "+str(players))
-        if not players: players_array = []
-        else:
-            players_array = players
-        self.s.send(b"ACK")
-        #print("players: "+str(players_array)+"\n")
-        model.player = players
 
-        print("| Receiving map data ...")
+        #print("| Receiving map data ...")
         model.map.width = pickle.loads(self.s.recv(1500))
         self.s.send(b"ACK")
         model.map.height = pickle.loads(self.s.recv(1500))
@@ -264,12 +263,16 @@ class NetworkClientController:
         model.map.array = pickle.loads(self.s.recv(1500))
         self.s.send(b"ACK")
         
-        print("| Map well received\n---\n")
+        #print("| Map well received\n---\n")
 
     def send_bomb_data(self):
-        bombs_to_send = pickle.dumps(self.model.bombs)
+        print("\n---\n| Sending new bomb data\n")
+        bombs_to_send = pickle.dumps(self.bomb_to_place)
         self.s.sendall(bombs_to_send)
+        print("| bomb data sent")
         self.s.recv(1500)
+        print("| Received ACK\n---\n")
+        self.bomb_to_place = 'null'
         
     def send_my_pos(self):
         print("\n---\n| Sending my position\n")
@@ -299,6 +302,14 @@ class NetworkClientController:
         if not self.model.player: return True
         nickname = self.model.player.nickname
         self.model.drop_bomb(nickname)
+        
+        self.bomb_to_place ='null'
+        for bomb in self.model.bombs:
+            data_to_send = pickle.dumps('null')
+            if bomb.pos == self.model.look(nickname).pos:
+                self.bomb_to_place = bomb
+                break
+            
         return True
 
     # time event
@@ -313,9 +324,9 @@ class NetworkClientController:
         self.s.recv(1500)
 
 
-        #self.send_bomb_data()
-        #self.s.send(b'ACK')
-        #self.s.recv(1500)
+        self.send_bomb_data()
+        self.s.send(b'ACK')
+        self.s.recv(1500)
 
         
         self.receive_map(self.model)
