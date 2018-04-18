@@ -6,6 +6,8 @@ import sys
 import socket
 import select
 import pickle
+
+import time
 ################################################################################
 #                          NETWORK SERVER CONTROLLER                           #
 ################################################################################
@@ -26,50 +28,10 @@ class NetworkServerController:
         (ip,a,b,c) = self.s.getsockname()
         self.nick_dictionnary={ip:"server"}
 
-    def first_connection(self, socket, nick_wanted):
-        (ip,a,b,c)=socket.getsockname()  
         
-        new_nick_wanted = nick_wanted
-        i=0
-        while not self.model.look(new_nick_wanted) == None:
-            new_nick_wanted = nick_wanted+str(i)
-            i=i+1
-        self.nick_dictionnary[ip] = new_nick_wanted
-        self.model.add_character(self.nick_dictionnary[ip], True)
-
-    def disconnect(self,socket):
-        (ip,a,b,c) = socket.getsockname()
-        nick_to_remove = self.nick_dictionnary[ip]
-        self.model.quit(nick_to_remove)
-
-        try:
-            (ip,a,b,c) = socket.getsockname()
-            nick_to_remove = self.nick_dictionnary[ip]
-            for i in nick_dictionnary:
-                if i == nick_to_remove:
-                    self.model.kill_character(nick_to_kill)
-                    self.nick_dictionnary.pop(i)
-        except:
-            print("No such key to remove (nickname on leave)")
-            pass
-        socket.close()                      #close the socket
-
-    def receive_player_movement(self,socket):
-        print("sending ack packet")
-        socket.send(b"ACK")
-        print("ack packet received from remote host")
-
-        (ip,a,b,c) = socket.getsockname()
-        username = nick_dictionnary[ip]
-        
-        movement = socket.recv(1500)#attribute the nick parameters to this ip
-        socket.send(b"ACK")
-        print("I received the order to move to: "+ movement.decode())
-        model.move_character(username, int(movement.decode()))  
-    
-    # time event
     def send_map(self, socket):
         print("\nEnvoie de la map ...")
+
         try:
             print("Envoie des caractères")
             characters_to_send = pickle.dumps(self.model.characters)
@@ -118,7 +80,59 @@ class NetworkServerController:
             self.disconnect(socket)
             self.liste_socket.remove(socket)
             return
+
+
+
+    def receive_char_position(self, socket):
+        (ip,a,b,c) = socket.getsockname()
+        print("nick dico = " +str(self.nick_dictionnary))
         
+        for i in self.nick_dictionnary:
+            print("i= "+str(i)+" | socket= "+str(ip))
+            if i == ip and not (ip == "::"):
+                print("FOUND THE SOCKET")  
+                for j in self.model.characters:
+                    if j.nickname == self.nick_dictionnary[i]:
+                        print("FOUND THE CHARACTER")
+                        data = pickle.loads(socket.recv(1500))
+                        
+                        socket.send(b'ACK')
+
+                        j = data
+        time.sleep(1)
+                
+
+    def first_connection(self, socket, nick_wanted):
+        (ip,a,b,c)=socket.getsockname()
+        
+        new_nick_wanted = nick_wanted
+        i=0
+        while not self.model.look(new_nick_wanted) == None:
+            new_nick_wanted = nick_wanted+str(i)
+            i=i+1
+        self.nick_dictionnary[ip] = new_nick_wanted
+        self.model.add_character(self.nick_dictionnary[ip], True)
+
+    def disconnect(self,socket):
+        (ip,a,b,c) = socket.getsockname()
+        nick_to_remove = self.nick_dictionnary[ip]
+        self.model.quit(nick_to_remove)
+
+        try:
+            (ip,a,b,c) = socket.getsockname()
+            nick_to_remove = self.nick_dictionnary[ip]
+            for i in nick_dictionnary:
+                if i == nick_to_remove:
+                    self.model.kill_character(nick_to_kill)
+                    self.nick_dictionnary.pop(i)
+        except:
+            print("No such key to remove (nickname on leave)")
+            pass
+        socket.close()                      #close the socket
+
+    
+       
+    # time event 
     def tick(self, dt):
 	# creation of sockets + connexion
         (lsock,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
@@ -130,9 +144,14 @@ class NetworkServerController:
                 self.first_connection(con, con.recv(1500).decode())
                 con.send(b'ACK')
             else :
+                
                 try:
                     sock.recv(1500)
                     self.send_map(sock)
+                                 
+                    sock.recv(1500)    
+                    sock.send(b'ACK')
+                    self.receive_char_position(sock)
                     
                 except BrokenPipeError as e:
                     print("Client disconnected: "+str(e))
@@ -225,19 +244,37 @@ class NetworkClientController:
 
     def keyboard_move_character(self, direction):
         print("=> event \"keyboard move direction\" {}".format(DIRECTIONS_STR[direction]))
-        # ...
-        self.s.send(direction.encode())
-        self.s.recv(1500)
+        if not self.model.player: return True
+        self.nickname = self.model.player.nickname
+        if direction in DIRECTIONS:
+            self.model.move_character(self.nickname, direction)
+            #self.s.recv(1500)
         return True
-
+    
+    def send_my_pos(self):
+        print("\n---\n| Sending my position\n")
+        self.s.send(pickle.dumps(self.model.characters[0]))
+        print("| Position sent")
+        self.s.recv(1500)
+        print("| Received ACK\n---\n")
+        time.sleep(1)
+        
     def keyboard_drop_bomb(self):
         print("=> event \"keyboard drop bomb\"")
-        # ...
         return True
 
     # time event
 
     def tick(self, dt):
+        
+
         self.s.send(b'ACK')
         self.receive_map(self.model)
+
+
+        self.s.send(b'ACK')
+        self.s.recv(1500)
+        #print("CHARACTERS: "+str(self.model.characters[0].pos))
+        self.send_my_pos()
+        
         return True
