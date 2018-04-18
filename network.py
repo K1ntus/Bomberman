@@ -20,8 +20,40 @@ class NetworkServerController:
         self.s.setblocking(False)
         self.s.bind(('',port))
         self.s.listen(2)
+        
         self.liste_socket = [self.s]
+        
+        (ip,a,b,c) = self.s.getsockname()
+        self.nick_dictionnary={ip:"server"}
 
+    def first_connection(self, socket, nick_wanted):
+        (ip,a,b,c)=socket.getsockname()  
+        
+        new_nick_wanted = nick_wanted
+        i=0
+        while not self.model.look(new_nick_wanted) == None:
+            new_nick_wanted = nick_wanted+str(i)
+            i=i+1
+        self.nick_dictionnary[ip] = new_nick_wanted
+        self.model.add_character(self.nick_dictionnary[ip], True)
+
+    def disconnect(self,socket):
+        (ip,a,b,c) = socket.getsockname()
+        nick_to_remove = self.nick_dictionnary[ip]
+        self.model.quit(nick_to_remove)
+
+        try:
+            (ip,a,b,c) = socket.getsockname()
+            nick_to_remove = self.nick_dictionnary[ip]
+            for i in nick_dictionnary:
+                if i == nick_to_remove:
+                    self.model.kill_character(nick_to_kill)
+                    self.nick_dictionnary.pop(i)
+        except:
+            print("No such key to remove (nickname on leave)")
+            pass
+        socket.close()                      #close the socket
+    
     # time event
     def send_map(self, socket):
         print("Sending map to: "+str(socket))
@@ -39,7 +71,7 @@ class NetworkServerController:
                 (con, ip) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
                 print("test 1")
                 self.liste_socket.append(con)
-                self.model.add_character(con.recv(1500),True)
+                self.first_connection(con, con.recv(1500).decode())
                 con.send(b'ACK')
             else :
                 try:
@@ -47,6 +79,7 @@ class NetworkServerController:
                     self.send_map(sock)
                 except BrokenPipeError as e:
                     print("Client disconnected: "+str(e))
+                    self.disconnect(sock)
                     self.liste_socket.remove(sock)
                 
         return True
@@ -58,8 +91,8 @@ class NetworkServerController:
 
 class NetworkClientController:
 
-    def __init__(self, file, host, port, nickname):
-        self.model = file
+    def __init__(self, model, host, port, nickname):
+        self.model = model
         self.host = host
         self.port = port
         self.nickname = nickname
@@ -73,17 +106,20 @@ class NetworkClientController:
     def receive_map(self, host_socket):
         print("Receiving map ...")
         packet_received = host_socket.recv(2048)
-        print("My map is:   "+str(packet_received))
         try:
             packet_received = pickle.loads(packet_received)
+            self.model = packet_received
             #print("Packet = "+str(packet_received))
         except EOFError:
             print("OMG ERROR")
             data = list()  # or whatever you want
+        
         print("   -> sending ACK")
         host_socket.send(b'ACK')
-        print("Map well received")
-        return packet_received
+        
+        print("Map well received ...")
+
+        
 
     # keyboard events
 
@@ -105,21 +141,5 @@ class NetworkClientController:
 
     def tick(self, dt):
         self.s.send(b'ACK')
-        self.model = self.receive_map(self.s)
+        self.receive_map(self.s)
         return True
-'''
-    # creating sockets
-
-    s = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,proto=0, fileno=None)
-    s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
-    try:
-        s.bind((host,port))
-    except socket.error:
-        print("Echec de la connexion au port choisi")
-        sys.exit()
-    msg = s.recv(1500)
-
-    while True:
-        msg = ("input utilisateur")#ajouter le msg à envoyer aka les entrées claviers pour jouer
-        s.send(msg)
-    s.close()'''
