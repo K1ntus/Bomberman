@@ -66,14 +66,12 @@ class NetworkServerController:
 
             #print("Map sent ! \n")
         except OSError as e:
-            print("A socket disconnected: "+str(e))
+            print("[Ln69] A socket disconnected: "+str(e))
             self.disconnect(socket)
-            self.liste_socket.remove(socket)
             return
         except BrokenPipeError as e:
-            print("A socket disconnected: "+str(e))
+            print("[Ln74] A socket disconnected: "+str(e))
             self.disconnect(socket)
-            self.liste_socket.remove(socket)
             return
 
 
@@ -88,13 +86,24 @@ class NetworkServerController:
                 inc = 0
                 for j in self.model.characters:
                     if j.nickname == self.nick_dictionnary[i]:
-                        #print("FOUND THE CHARACTER")
-                        data = pickle.loads(socket.recv(1500))
-                        #print("Received: "+str(data.pos)+" !!!!")
-                        
-                        socket.send(b'ACK')
+                        try:
+                            #print("FOUND THE CHARACTER")
+                            data = pickle.loads(socket.recv(1500))
+                            #print("Received: "+str(data.pos)+" !!!!")
+                            
+                            socket.send(b'ACK')
 
-                        self.model.characters[inc] = data
+                            self.model.characters[inc] = data
+                            
+                        except OSError as e:
+                            print("[Ln101] A socket disconnected: "+str(e))
+                            self.disconnect(socket)
+                            return
+                        except BrokenPipeError as e:
+                            print("[Ln106] A socket disconnected: "+str(e))
+                            self.disconnect(socket)
+                            return
+
                     inc = inc+1
                     
                 
@@ -121,24 +130,20 @@ class NetworkServerController:
         while not self.model.look(new_nick_wanted) == None:
             new_nick_wanted = nick_wanted+str(i)
             i=i+1
+            
         self.nick_dictionnary[ip] = new_nick_wanted
         self.model.add_character(self.nick_dictionnary[ip], True)
 
     def disconnect(self,socket):
         (ip,a,b,c) = socket.getsockname()
-        nick_to_remove = self.nick_dictionnary[ip]
-        self.model.quit(nick_to_remove)
 
-        try:
-            (ip,a,b,c) = socket.getsockname()
-            nick_to_remove = self.nick_dictionnary[ip]
-            for i in nick_dictionnary:
-                if i == nick_to_remove:
-                    self.model.kill_character(nick_to_kill)
-                    self.nick_dictionnary.pop(i)
-        except:
-            print("No such key to remove (nickname on leave)")
-            pass
+        nick_to_remove = self.nick_dictionnary[ip]
+        for i in self.nick_dictionnary:
+            if self.nick_dictionnary[i] == nick_to_remove:
+                self.model.quit(self.nick_dictionnary[ip])
+                self.nick_dictionnary.pop(i)
+                break
+        self.liste_socket.remove(socket)
         socket.close()                      #close the socket
 
     
@@ -146,21 +151,32 @@ class NetworkServerController:
     # time event 
     def tick(self, dt):
 	# creation of sockets + connexion
-        (lsock,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
-        for sock in lsock:      #les sockets parmi la liste
-            if sock == self.s and lsock:
-                (con, ip) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
-                print("test 1")
-                self.liste_socket.append(con)
-                self.first_connection(con, con.recv(1500).decode())
+        (readable_socket,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
+        for sock in readable_socket:      #les sockets parmi la liste
+            if sock == self.s:
+                try:
+                    (con, (ip,a,b,c)) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
+                    print("ip: "+str(ip)+' connected')
+                    self.liste_socket.append(con)
+                    self.first_connection(con, con.recv(1500).decode())
+                        
+                    con.send(b'ACK')
+                    con.recv(1500)
+                        
+                    self.send_map(con)
+                                         
+                    con.recv(1500)    
+                    con.send(b'ACK')
                 
-                con.send(b'ACK')
-                con.recv(1500)
+                except OSError as e:
+                    print("[Ln101] A socket disconnected: "+str(e))
+                    self.disconnect(con)
+                    return
+                except BrokenPipeError as e:
+                    print("[Ln106] A socket disconnected: "+str(e))
+                    self.disconnect(con)
+                    return
                 
-                self.send_map(con)
-                                 
-                con.recv(1500)    
-                con.send(b'ACK')
             else :
                 #print(self.model.player)
                 
@@ -181,13 +197,19 @@ class NetworkServerController:
                     sock.send(b'ACK')
                     
                 except BrokenPipeError as e:
-                    print("Client disconnected: "+str(e))
+                    print("[Ln204] Client disconnected: "+str(e))
                     self.disconnect(sock)
-                    self.liste_socket.remove(sock)
                 except ConnectionResetError as e:
-                    print("Client disconnected: "+str(e))
+                    print("[Ln208] Client disconnected: "+str(e))
                     self.disconnect(sock)
-                    self.liste_socket.remove(sock)
+                except OSError as e:
+                    print("[Ln212] A socket disconnected: "+str(e))
+                    self.disconnect(sock)
+                    return
+                except EOFError as e:
+                    print("[Ln217] A socket disconnected: "+str(e))
+                    self.disconnect(sock)
+                    return
                 
         
         return True
@@ -276,7 +298,7 @@ class NetworkClientController:
         
     def send_my_pos(self):
         print("\n---\n| Sending my position\n")
-        self.s.send(pickle.dumps(self.model.characters[0]))
+        self.s.send(pickle.dumps(self.model.look(self.nickname)))
         print("| Position sent")
         self.s.recv(1500)
         print("| Received ACK\n---\n")

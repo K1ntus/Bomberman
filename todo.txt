@@ -1,0 +1,4 @@
+Gestion de connexion/deconnexion
+Conflit lors de la pose de bombes (peuvent se superposer)
+Crash lors de la connexion de clients multiples
+Mort naturelle par bombe
