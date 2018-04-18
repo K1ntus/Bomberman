@@ -30,46 +30,46 @@ class NetworkServerController:
 
         
     def send_map(self, socket):
-        print("\nEnvoie de la map ...")
+        #print("\nEnvoie de la map ...")
 
         try:
-            print("Envoie des caractères")
+            #print("Envoie des caractères")
             characters_to_send = pickle.dumps(self.model.characters)
             socket.sendall(characters_to_send)
             socket.recv(1500)
             
-            print("Envoie des fruit")
+            #print("Envoie des fruit")
             fruits_to_send = pickle.dumps(self.model.fruits)
             socket.sendall(fruits_to_send)
             socket.recv(1500)
 
-            print("Envoie des position de bombes")
+            #print("Envoie des position de bombes")
             bombs_to_send = pickle.dumps(self.model.bombs)
             socket.sendall(bombs_to_send)
             socket.recv(1500)
             
-            print("Envoie des player_to_send ")
+            #print("Envoie des player_to_send ")
             player_to_send = pickle.dumps(self.model.player)
             socket.sendall(player_to_send)
             socket.recv(1500)
             
-            print("Envoie des data de la map")
-            print("   -> map width")
+            #print("Envoie des data de la map")
+            #print("   -> map width")
             map_width = pickle.dumps(self.model.map.width)
             socket.sendall(map_width)
             socket.recv(1500)
 
-            print("   -> map height")
+            #print("   -> map height")
             map_height = pickle.dumps(self.model.map.height)
             socket.sendall(map_height)
             socket.recv(1500)
             
-            print("   -> map board")
+            #print("   -> map board")
             map_array_to_send = pickle.dumps(self.model.map.array)
             socket.sendall(map_array_to_send)
             socket.recv(1500)
 
-            print("Map sent ! \n")
+            #print("Map sent ! \n")
         except OSError as e:
             print("A socket disconnected: "+str(e))
             self.disconnect(socket)
@@ -85,23 +85,22 @@ class NetworkServerController:
 
     def receive_char_position(self, socket):
         (ip,a,b,c) = socket.getsockname()
-        print("nick dico = " +str(self.nick_dictionnary))
         
         for i in self.nick_dictionnary:
-            print("i= "+str(i)+" | socket= "+str(ip))
+            #print("i= "+str(i)+" | socket= "+str(ip))
             if i == ip and not (ip == "::"):
-                print("FOUND THE SOCKET")
+                #print("FOUND THE SOCKET")
                 inc = 0
                 for j in self.model.characters:
                     if j.nickname == self.nick_dictionnary[i]:
-                        print("FOUND THE CHARACTER")
+                        #print("FOUND THE CHARACTER")
                         data = pickle.loads(socket.recv(1500))
+                        #print("Received: "+str(data.pos)+" !!!!")
                         
                         socket.send(b'ACK')
 
                         self.model.characters[inc] = data
                     inc = inc+1
-        time.sleep(1)
                 
 
     def first_connection(self, socket, nick_wanted):
@@ -144,17 +143,28 @@ class NetworkServerController:
                 print("test 1")
                 self.liste_socket.append(con)
                 self.first_connection(con, con.recv(1500).decode())
+                
+                con.send(b'ACK')
+                con.recv(1500)
+                
+                self.send_map(con)
+                                 
+                con.recv(1500)    
                 con.send(b'ACK')
             else :
+                print(self.model.player)
                 
                 try:
                     sock.recv(1500)
-                    self.send_map(sock)
+                    self.receive_char_position(sock)
                                  
                     sock.recv(1500)    
                     sock.send(b'ACK')
                     
-                    self.receive_char_position(sock)
+                    self.send_map(sock)
+                    
+                    sock.recv(1500)    
+                    sock.send(b'ACK')
                     
                 except BrokenPipeError as e:
                     print("Client disconnected: "+str(e))
@@ -165,6 +175,7 @@ class NetworkServerController:
                     self.disconnect(sock)
                     self.liste_socket.remove(sock)
                 
+        
         return True
 
     
@@ -185,6 +196,13 @@ class NetworkClientController:
 
         
         self.s.send(nickname.encode())
+        
+        self.s.recv(1500)
+        self.s.send(b'ACK')
+        
+        self.receive_map(self.model)
+
+        self.s.send(b'ACK')
         self.s.recv(1500)
 
     def receive_map(self,model):
@@ -197,7 +215,7 @@ class NetworkClientController:
         else:
             characters_array = characters
         self.s.send(b"ACK")
-        print("characters: "+str(characters_array)+"\n")
+        #print("characters: "+str(characters_array)+"\n")
         model.characters = characters
 
         print("| Receiving fruits ...")
@@ -206,7 +224,7 @@ class NetworkClientController:
         else:
             fruits_array = fruits
         self.s.sendall(b"ACK")
-        print("fruits: "+str(fruits_array)+"\n")
+        #print("fruits: "+str(fruits_array)+"\n")
         model.fruits = fruits
 
         print("| Receiving bombs ...")
@@ -215,7 +233,7 @@ class NetworkClientController:
         else:
             bombs_array = bombs
         self.s.send(b"ACK")
-        print("bombs: "+str(bombs_array)+"\n")
+        #print("bombs: "+str(bombs_array)+"\n")
         model.bombs = bombs
         
         print("| Receiving players ...")
@@ -225,7 +243,7 @@ class NetworkClientController:
         else:
             players_array = players
         self.s.send(b"ACK")
-        print("players: "+str(players_array)+"\n")
+        #print("players: "+str(players_array)+"\n")
         model.player = players
 
         print("| Receiving map data ...")
@@ -261,7 +279,6 @@ class NetworkClientController:
         print("| Position sent")
         self.s.recv(1500)
         print("| Received ACK\n---\n")
-        time.sleep(1)
         
     def keyboard_drop_bomb(self):
         print("=> event \"keyboard drop bomb\"")
@@ -273,12 +290,17 @@ class NetworkClientController:
         
 
         self.s.send(b'ACK')
-        self.receive_map(self.model)
+        self.send_my_pos()
 
 
         self.s.send(b'ACK')
         self.s.recv(1500)
+        
         print("CHARACTERS: "+str(self.model.characters[0].pos))
-        self.send_my_pos()
+        self.receive_map(self.model)
+        
+        self.s.send(b'ACK')
+        self.s.recv(1500)
+
         
         return True
