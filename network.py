@@ -35,22 +35,12 @@ class NetworkServerController:
         try:
             #print("Envoie des caractères")
             characters_to_send = pickle.dumps(self.model.characters)
-            try:
-                print("SENDING:   "+str(self.model.characters[0].nickname))
-                print("SENDING:   "+str(self.model.characters[1].nickname))
-            except:
-                print("SENDING:   "+str(self.model.characters[0].nickname))
 
             socket.sendall(characters_to_send)
             socket.recv(1500)
             
             #print("Envoie des fruit")
             fruits_to_send = pickle.dumps(self.model.fruits)
-            try:
-                print("SENDING:   "+str(self.model.fruits[0]))
-                print("SENDING:   "+str(self.model.fruits[1]))
-            except:
-                print("SENDING:   "+str(self.model.fruits[0]))
 
 
             socket.sendall(fruits_to_send)
