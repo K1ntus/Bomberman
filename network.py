@@ -240,6 +240,7 @@ class NetworkClientController:
         
         self.receive_map(self.model)
 
+
         self.s.send(b'ACK')
         self.s.recv(1500)
 
