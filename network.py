@@ -26,7 +26,7 @@ class NetworkServerController:
         self.liste_socket = [self.s]
         
         (ip,a,b,c) = self.s.getsockname()
-        self.nick_dictionnary={ip:"server"}
+        self.nick_dictionnary={self.s:"server"}
 
         
     def send_map(self, socket):
@@ -35,11 +35,24 @@ class NetworkServerController:
         try:
             #print("Envoie des caractères")
             characters_to_send = pickle.dumps(self.model.characters)
+            try:
+                print("SENDING:   "+str(self.model.characters[0].nickname))
+                print("SENDING:   "+str(self.model.characters[1].nickname))
+            except:
+                print("SENDING:   "+str(self.model.characters[0].nickname))
+
             socket.sendall(characters_to_send)
             socket.recv(1500)
             
             #print("Envoie des fruit")
             fruits_to_send = pickle.dumps(self.model.fruits)
+            try:
+                print("SENDING:   "+str(self.model.fruits[0]))
+                print("SENDING:   "+str(self.model.fruits[1]))
+            except:
+                print("SENDING:   "+str(self.model.fruits[0]))
+
+
             socket.sendall(fruits_to_send)
             socket.recv(1500)
 
@@ -65,10 +78,6 @@ class NetworkServerController:
             socket.recv(1500)
 
             #print("Map sent ! \n")
-        except OSError as e:
-            print("[Ln69] A socket disconnected: "+str(e))
-            self.disconnect(socket)
-            return
         except BrokenPipeError as e:
             print("[Ln74] A socket disconnected: "+str(e))
             self.disconnect(socket)
@@ -77,11 +86,11 @@ class NetworkServerController:
 
 
     def receive_char_position(self, socket):
-        (ip,a,b,c) = socket.getsockname()
         
         for i in self.nick_dictionnary:
             #print("i= "+str(i)+" | socket= "+str(ip))
-            if i == ip and not (ip == "::"):
+            (ip,a,b,c) = i.getsockname()
+            if i == socket and not (ip == "::"):
                 #print("FOUND THE SOCKET")
                 inc = 0
                 for j in self.model.characters:
@@ -109,7 +118,7 @@ class NetworkServerController:
                 
     def receive_bomb_position(self, socket):
         (ip,a,b,c) = socket.getsockname()
-        nickname = self.nick_dictionnary[ip]
+        nickname = self.nick_dictionnary[socket]
             
         data = pickle.loads(socket.recv(1500))
         socket.send(b'ACK')
@@ -123,7 +132,11 @@ class NetworkServerController:
                 
 
     def first_connection(self, socket, nick_wanted):
-        (ip,a,b,c)=socket.getsockname()
+        try:
+            (ip,a,b,c)=socket.getsockname()
+        except OSError:
+            print("oups")
+            return
         
         new_nick_wanted = nick_wanted
         i=0
@@ -131,16 +144,22 @@ class NetworkServerController:
             new_nick_wanted = nick_wanted+str(i)
             i=i+1
             
-        self.nick_dictionnary[ip] = new_nick_wanted
-        self.model.add_character(self.nick_dictionnary[ip], True)
+        self.nick_dictionnary[socket] = new_nick_wanted
+        self.model.add_character(self.nick_dictionnary[socket], True)
 
     def disconnect(self,socket):
-        (ip,a,b,c) = socket.getsockname()
-
-        nick_to_remove = self.nick_dictionnary[ip]
+        try:
+            (ip,a,b,c)=socket.getsockname()
+        except OSError as e:
+            print("nick dico:" +str(self.nick_dictionnary))
+            print("socket list:" +str(self.liste_socket))
+            print("oups: "+str(e))
+            return
+        
+        nick_to_remove = self.nick_dictionnary[socket]
         for i in self.nick_dictionnary:
             if self.nick_dictionnary[i] == nick_to_remove:
-                self.model.quit(self.nick_dictionnary[ip])
+                self.model.quit(self.nick_dictionnary[socket])
                 self.nick_dictionnary.pop(i)
                 break
         self.liste_socket.remove(socket)
@@ -154,11 +173,14 @@ class NetworkServerController:
         (readable_socket,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
         for sock in readable_socket:      #les sockets parmi la liste
             if sock == self.s:
-                try:
                     (con, (ip,a,b,c)) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
                     print("ip: "+str(ip)+' connected')
+
+                    
                     self.liste_socket.append(con)
+                    
                     self.first_connection(con, con.recv(1500).decode())
+                    
                         
                     con.send(b'ACK')
                     con.recv(1500)
@@ -167,15 +189,7 @@ class NetworkServerController:
                                          
                     con.recv(1500)    
                     con.send(b'ACK')
-                
-                except OSError as e:
-                    print("[Ln101] A socket disconnected: "+str(e))
-                    self.disconnect(con)
-                    return
-                except BrokenPipeError as e:
-                    print("[Ln106] A socket disconnected: "+str(e))
-                    self.disconnect(con)
-                    return
+                        
                 
             else :
                 #print(self.model.player)
@@ -250,14 +264,17 @@ class NetworkClientController:
         #print("\n---\n| Receiving map")
 
         #print("| Receiving characters ...")
-        
-        characters = pickle.loads(self.s.recv(1500))
-        if not characters: characters_array = []
-        else:
-            characters_array = characters
-        self.s.send(b"ACK")
-        #print("characters: "+str(characters_array)+"\n")
-        model.characters = characters
+        try:
+            characters = pickle.loads(self.s.recv(1500))
+            if not characters: characters_array = []
+            else:
+                characters_array = characters
+            self.s.send(b"ACK")
+            #print("characters: "+str(characters_array)+"\n")
+            model.characters = characters
+        except EOFError as e:
+            print("Error while receiving char: "+str(e))
+            model.characters = []
 
         #print("| Receiving fruits ...")
         fruits = pickle.loads(self.s.recv(1500))
