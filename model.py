@@ -28,8 +28,10 @@ DEFAULT_MAP = "maps/map0"
 # fruit
 BANANA = 0
 CHERRY = 1
-FRUITS = [BANANA, CHERRY]
-FRUITS_STR = ["banana", "cherry"]
+STAR = 2
+FRUITS_USUAL = [BANANA, CHERRY]
+FRUITS = [BANANA, CHERRY, STAR]
+FRUITS_STR = ["banana", "cherry", "star"]
 
 # character
 DK = 0
@@ -149,8 +151,12 @@ class Character:
 
     def eat(self, fruit):
         if fruit.pos[X] == self.pos[X] and fruit.pos[Y] == self.pos[Y]:
-            self.health += 10
-            print("{}\'s health: {}".format(self.nickname, self.health))
+            if fruit.kind == STAR:
+                self.immunity = 10000#10 seconds
+                print("{}\'s immunity: {}".format(self.nickname, self.immunity))
+            else:
+                self.health += 10
+                print("{}\'s health: {}".format(self.nickname, self.health))
             return True
         return False
 
@@ -222,7 +228,7 @@ class Model:
     # add a new fruit
     def add_fruit(self, kind = None, pos = None):
         if pos is None: pos = self.map.random()
-        if kind is None: kind = random.choice(FRUITS)
+        if kind is None: kind = random.choice(FRUITS_USUAL)
         self.fruits.append(Fruit(kind, self.map, pos))
         print("=> add fruit ({}) at position ({},{})".format(FRUITS_STR[kind], pos[X], pos[Y]))
 

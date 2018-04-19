@@ -306,7 +306,7 @@ class NetworkClientController:
         #print("| Map well received\n---\n")
 
     def send_bomb_data(self):
-        print("\n---\n| Sending new bomb data\n")
+        print("\n---\n| Sending new bomb data")
         bombs_to_send = pickle.dumps(self.bomb_to_place)
         self.s.sendall(bombs_to_send)
         print("| bomb data sent")
@@ -315,7 +315,7 @@ class NetworkClientController:
         self.bomb_to_place = 'null'
         
     def send_my_pos(self):
-        print("\n---\n| Sending my position\n")
+        print("\n---\n| Sending my position")
         self.s.send(pickle.dumps(self.model.look(self.nickname)))
         print("| Position sent")
         self.s.recv(1500)
