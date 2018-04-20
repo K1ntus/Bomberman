@@ -14,6 +14,20 @@ import time #time.sleep(1) #1000ms
 #                          NETWORK SERVER CONTROLLER                           #
 ################################################################################
 
+BAN_HAMMER = 0      #generating bombs on the map
+CRAZY_FRUIT = 1     #generating new fruits
+ISSOU = 2           #no event
+STAR_RAIN = 3       #generating a star: invulnerability 1k ms
+
+#multiple time the same event for probability
+SERVER_EVENTS = [BAN_HAMMER, BAN_HAMMER, BAN_HAMMER,
+                 CRAZY_FRUIT,
+                 ISSOU, ISSOU,
+                 STAR_RAIN]
+
+TICK_BEFORE_EVENT = 250     #tick etween each server events
+MIN_PLAYER_FOR_EVENT = 2    #Minimal numbers of players to allow server events
+
 class NetworkServerController:
 
     def __init__(self, model, port):
@@ -34,6 +48,32 @@ class NetworkServerController:
         (ip,a,b,c) = self.s.getsockname()
         self.nick_dictionnary={self.s:"server"}
 
+        self.tick_before_event = 0
+
+    def event_banHammer(self):
+        for c in self.model.characters:
+            self.model.drop_bomb(c.nickname)
+        
+    def map_event(self):
+        if self.tick_before_event >= TICK_BEFORE_EVENT:
+            choice = random.choice(SERVER_EVENTS)
+            self.tick_before_event = 0
+            
+            if choice == BAN_HAMMER:
+                print("SERVER EVENT: ban hammer !")
+                self.event_banHammer()
+                return
+            elif choice == STAR_RAIN:
+                print("SERVER EVENT: star rain !")
+                self.model.add_fruit(STAR)
+                return
+            elif choice == ISSOU:
+                print("SERVER EVENT: issou !")
+                return
+            elif choice == CRAZY_FRUIT:
+                print("SERVER EVENT: crazy fruit !")
+                for _ in range(2): self.model.add_fruit()
+                return
         
     def send_map(self, socket):
         #print("\nEnvoie de la map ...")
@@ -207,9 +247,14 @@ class NetworkServerController:
     # time event 
     def tick(self, dt):
         Thread = None
+        if len(self.liste_socket) > (MIN_PLAYER_FOR_EVENT+1):
+            self.tick_before_event = self.tick_before_event + 1
+        self.map_event()
+
         
 	# creation of sockets + connexion
         (readable_socket,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
+        
         for sock in readable_socket:      #les sockets parmi la liste
             self.verrou.acquire()
             
