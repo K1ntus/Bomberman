@@ -105,6 +105,20 @@ class NetworkServerController:
                             print("[Ln106] A socket disconnected: "+str(e))
                             self.disconnect(socket)
                             return
+                        except BrokenPipeError as e:
+                            print("[LN100] Client disconnected: "+str(e))
+                            self.disconnect(socket)
+                        except ConnectionResetError as e:
+                            print("[LN100] Client disconnected: "+str(e))
+                            self.disconnect(socket)
+                        except OSError as e:
+                            print("[LN100] A socket disconnected: "+str(e))
+                            self.disconnect(socket)
+                            return
+                        except EOFError as e:
+                            print("[LN100] A socket disconnected: "+str(e))
+                            self.disconnect(socket)
+                            return
 
                     inc = inc+1
                     
@@ -136,9 +150,9 @@ class NetworkServerController:
         while not self.model.look(new_nick_wanted) == None:
             new_nick_wanted = nick_wanted+str(i)
             i=i+1
-            
+         
         self.nick_dictionnary[socket] = new_nick_wanted
-        self.model.add_character(self.nick_dictionnary[socket], True)
+        self.model.add_character(self.nick_dictionnary[socket], isplayer = True)
 
     def disconnect(self,socket):
         try:
@@ -160,7 +174,6 @@ class NetworkServerController:
 
 
     def read_and_write(self, sock):
-        while(1):
             sock.recv(1500)
             self.receive_char_position(sock)
                          
@@ -175,13 +188,16 @@ class NetworkServerController:
             
             sock.recv(1500)    
             sock.send(b'ACK')
-        return
+
+            return
        
     # time event 
     def tick(self, dt):
 	# creation of sockets + connexion
         (readable_socket,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
         for sock in readable_socket:      #les sockets parmi la liste
+            Thread = threading.Thread(None, self.read_and_write, None, (sock,))
+
             if sock == self.s:
                     (con, (ip,a,b,c)) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
                     print("ip: "+str(ip)+' connected')
@@ -199,12 +215,17 @@ class NetworkServerController:
                                          
                     con.recv(1500)    
                     con.send(b'ACK')
+
+
                 
             else :
-                #print(self.model.player)
+                print("[")
+                for c in self.model.characters:
+                    print("Characters: "+str(c))
+                print("]")
                 
                 try:
-                    Thread = threading.Thread(None, self.read_and_write, None, (sock,)).start()
+                    Thread.start()
                     
                 except BrokenPipeError as e:
                     print("[Ln204] Client disconnected: "+str(e))
@@ -220,6 +241,7 @@ class NetworkServerController:
                     print("[Ln217] A socket disconnected: "+str(e))
                     self.disconnect(sock)
                     return
+                
                 
         
         return True
@@ -260,17 +282,13 @@ class NetworkClientController:
         #print("\n---\n| Receiving map")
 
         #print("| Receiving characters ...")
-        try:
-            characters = pickle.loads(self.s.recv(1500))
-            if not characters: characters_array = []
-            else:
-                characters_array = characters
-            self.s.send(b"ACK")
-            #print("characters: "+str(characters_array)+"\n")
-            model.characters = characters
-        except EOFError as e:
-            print("Error while receiving char: "+str(e))
-            model.characters = []
+        characters = pickle.loads(self.s.recv(1500))
+        if not characters: characters_array = []
+        else:
+            characters_array = characters
+        self.s.send(b"ACK")
+        #print("characters: "+str(characters_array)+"\n")
+        model.characters = characters
 
         #print("| Receiving fruits ...")
         fruits = pickle.loads(self.s.recv(1500))
