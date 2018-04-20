@@ -214,26 +214,27 @@ class Model:
         for c in self.characters:
             (a,b) = c.pos
             if c.pushing == 0:
-                return
+                #return
+                print("no way")
             if c.direction == DIRECTION_RIGHT:
                 for bombs in self.bombs:
                     (x,y) = bombs.pos
-                    if (a +1) == x:
+                    if (a +1) == x and x < self.map.width:
                         bombs.pos = (x,x+1)
             if c.direction == DIRECTION_LEFT:
                 for bombs in self.bombs:
                     (x,y) = bombs.pos
-                    if (a -1) == x:
+                    if (a -1) == x and x>0:
                         bombs.pos = (x,x-1)
             if c.direction == DIRECTION_UP:
                 for bombs in self.bombs:
                     (x,y) = bombs.pos
-                    if (b -1) == y:
+                    if (b -1) == y and y > 0:
                         bombs.pos = (x,y-1)
             if c.direction == DIRECTION_DOWN:
                 for bombs in self.bombs:
                     (x,y) = bombs.pos
-                    if (b +1) == y:
+                    if (b +1) == y and y < self.map.height:
                         bombs.pos = (x,y+1)
 
     # look for a character, return None if not found
