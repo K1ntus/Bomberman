@@ -448,7 +448,7 @@ class NetworkClientController:
     # time event
 
     def tick(self, dt):
-        print("Ma position: "+str(self.model.characters[0].pos))
+        #print("Ma position: "+str(self.model.characters[0].pos))
         
         self.s.send(b'ACK')
 

@@ -25,15 +25,15 @@ WALLS = ('w', 'x', 'z')
 BACKGROUNDS = ('0', '1', '2')
 DEFAULT_MAP = "maps/map0"
 
-#bonus
-STAR = 2
-PUSH = 3
 
 # fruit
 BANANA = 0
 CHERRY = 1
+#bonus
+STAR = 2
+PUSH = 3
 FRUITS_USUAL = [BANANA, CHERRY]
-FRUITS = [PUSH, BANANA, CHERRY, STAR]
+FRUITS = [BANANA, CHERRY, STAR, PUSH]
 FRUITS_STR = [ "banana", "cherry", "star","push"]
 
 # character
@@ -45,8 +45,10 @@ CHARACTERS_STR = ["dk", "zelda", "batman"]
 HEALTH = 50
 MAX_RANGE = 5
 COUNTDOWN = 5
-IMMUNITY = 1500 # in ms
-DISARMED = 2000 # in ms
+STAR_IMMUNITY = 12500   # in ms
+IMMUNITY = 1500         # in ms
+DISARMED = 2000         # in ms
+PUSHING = 20000         # in ms
 
 ### Class Map ###
 
@@ -127,30 +129,6 @@ class Character:
         self.direction = DIRECTION_RIGHT
         self.pushing = 0 #  the character can push bomb during those ticks
 
-    def pushing_bomb(self): #(0,0) = en haut a gauche
-        if pushing == 0:
-            print("CANT PUSH")
-            return
-        if self.direction == DIRECTION_RIGHT:
-            for bombs in self.bombs:
-                (x,y) = bombs.pos
-                if (self.pos.x +1) == x:
-                    print("IL Y A UNE BOMBE A POUSSER, GG")
-        if self.direction == DIRECTION_LEFT:
-            for bombs in self.bombs:
-                (x,y) = bombs.pos
-                if (self.pos.x -1) == x:
-                    print("IL Y A UNE BOMBE A POUSSER, GG")
-        if self.direction == DIRECTION_UP:
-            for bombs in self.bombs:
-                (x,y) = bombs.pos
-                if (self.pos.y -1) == y:
-                    print("IL Y A UNE BOMBE A POUSSER, GG")
-        if self.direction == DIRECTION_DOWN:
-            for bombs in self.bombs:
-                (x,y) = bombs.pos
-                if (self.pos.y +1) == y:
-                    print("IL Y A UNE BOMBE A POUSSER, GG")
         
 
     def move(self, direction):
@@ -182,11 +160,13 @@ class Character:
     def eat(self, fruit):
         if fruit.pos[X] == self.pos[X] and fruit.pos[Y] == self.pos[Y]:
             if fruit.kind == STAR:
-                self.immunity = 10000#10 seconds
+                self.immunity = STAR_IMMUNITY
                 print("{}\'s immunity: {}".format(self.nickname, self.immunity))
-            elif fruit.kind == PUSH:
-                self.pushing = 5000#5 seconds
-                print("{}\'s immunity: {}".format(self.nickname, self.immunity))
+                return True
+            if fruit.kind == PUSH:
+                self.pushing = PUSHING
+                print("{}\'s pushing: {}".format(self.nickname, self.pushing))
+                return True
             else:
                 self.health += 10
                 print("{}\'s health: {}".format(self.nickname, self.health))
@@ -199,10 +179,14 @@ class Character:
         else: self.immunity = 0
         if self.disarmed > 0: self.disarmed -= dt
         else: self.disarmed = 0
+
+        '''
+        print("pushing value:  " +str(self.pushing)) 
         if self.pushing > 0:
             self.pushing -= dt
             self.pushing_bomb()
         else: self.pushing = 0
+        '''
 
     def explosion(self, bomb):
         if bomb.countdown != 0: return False
@@ -229,6 +213,35 @@ class Model:
         self.fruits = []
         self.bombs = []
         self.player = None
+
+        
+    def pushing_bomb(self): #(0,0) = en haut a gauche
+        for c in self.characters:
+            '''
+            if c.pushing == 0:
+                print("CANT PUSH")
+                return
+            '''
+            if c.direction == DIRECTION_RIGHT:
+                for bombs in self.bombs:
+                    (x,y) = bombs.pos
+                    if (c.pos.x +1) == x:
+                        print("IL Y A UNE BOMBE A POUSSER, GG")
+            if c.direction == DIRECTION_LEFT:
+                for bombs in self.bombs:
+                    (x,y) = bombs.pos
+                    if (c.pos.x -1) == x:
+                        print("IL Y A UNE BOMBE A POUSSER, GG")
+            if c.direction == DIRECTION_UP:
+                for bombs in self.bombs:
+                    (x,y) = bombs.pos
+                    if (c.pos.y -1) == y:
+                        print("IL Y A UNE BOMBE A POUSSER, GG")
+            if c.direction == DIRECTION_DOWN:
+                for bombs in self.bombs:
+                    (x,y) = bombs.pos
+                    if (c.pos.y +1) == y:
+                        print("IL Y A UNE BOMBE A POUSSER, GG")
 
     # look for a character, return None if not found
     def look(self, nickname):
@@ -292,7 +305,7 @@ class Model:
         if character.disarmed == 0:
             self.bombs.append(Bomb(self.map, character.pos))
             character.disarmed = DISARMED
-        print("=> drop bomb at position ({},{})".format(character.pos[X], character.pos[Y]))
+         #print("=> drop bomb at position ({},{})".format(character.pos[X], character.pos[Y]))
 
     # move a character
     def move_character(self, nickname, direction):
@@ -301,7 +314,7 @@ class Model:
             print("Error: nickname \"{}\" not found!".format(nickname))
             sys.exit(1)
         character.move(direction)
-        print("=> move {} \"{}\" at position ({},{})".format(DIRECTIONS_STR[direction], nickname, character.pos[X], character.pos[Y]))
+        #print("=> move {} \"{}\" at position ({},{})".format(DIRECTIONS_STR[direction], nickname, character.pos[X], character.pos[Y]))
 
     # update model at each clock tick
     def tick(self, dt):
