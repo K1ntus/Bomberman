@@ -10,9 +10,12 @@ import pickle
 import threading
 
 import time #time.sleep(1) #1000ms
+
+
 ################################################################################
-#                          NETWORK SERVER CONTROLLER                           #
+#                                     CONSTANTE                                #
 ################################################################################
+
 
 BAN_HAMMER = 0      #generating bombs on the map
 CRAZY_FRUIT = 1     #generating new fruits
@@ -20,13 +23,18 @@ ISSOU = 2           #no event
 STAR_RAIN = 3       #generating a star: invulnerability 1k ms
 
 #multiple time the same event for probability
-SERVER_EVENTS = [BAN_HAMMER, BAN_HAMMER, BAN_HAMMER,
-                 CRAZY_FRUIT,
-                 ISSOU, ISSOU,
-                 STAR_RAIN]
+SERVER_EVENTS = [BAN_HAMMER, BAN_HAMMER,                #2 - one bomb on each characters
+                 CRAZY_FRUIT, CRAZY_FRUIT, CRAZY_FRUIT, #4 - 2 fruits appears
+                 ISSOU, ISSOU, ISSOU, ISSOU,            #3 - nothing
+                 STAR_RAIN]                             #1 - invulnerability
 
 TICK_BEFORE_EVENT = 250     #tick etween each server events
 MIN_PLAYER_FOR_EVENT = 2    #Minimal numbers of players to allow server events
+
+
+################################################################################
+#                          NETWORK SERVER CONTROLLER                           #
+################################################################################
 
 class NetworkServerController:
 

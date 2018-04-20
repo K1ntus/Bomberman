@@ -25,13 +25,16 @@ WALLS = ('w', 'x', 'z')
 BACKGROUNDS = ('0', '1', '2')
 DEFAULT_MAP = "maps/map0"
 
+#bonus
+STAR = 2
+PUSH = 3
+
 # fruit
 BANANA = 0
 CHERRY = 1
-STAR = 2
 FRUITS_USUAL = [BANANA, CHERRY]
-FRUITS = [BANANA, CHERRY, STAR]
-FRUITS_STR = ["banana", "cherry", "star"]
+FRUITS = [PUSH, BANANA, CHERRY, STAR]
+FRUITS_STR = [ "banana", "cherry", "star","push"]
 
 # character
 DK = 0
@@ -73,7 +76,7 @@ class Map:
             if self.array[y][x] in BACKGROUNDS:
                 break
         return (x,y)
-
+### Class Bonus ###
 ### Class Fruit ###
 
 class Fruit:
