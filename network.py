@@ -7,7 +7,9 @@ import socket
 import select
 import pickle
 
-import time
+import threading
+
+import time #time.sleep(1) #1000ms
 ################################################################################
 #                          NETWORK SERVER CONTROLLER                           #
 ################################################################################
@@ -94,6 +96,7 @@ class NetworkServerController:
 
                             self.model.characters[inc] = data
                             
+                            
                         except OSError as e:
                             print("[Ln101] A socket disconnected: "+str(e))
                             self.disconnect(socket)
@@ -155,7 +158,24 @@ class NetworkServerController:
         self.liste_socket.remove(socket)
         socket.close()                      #close the socket
 
-    
+
+    def read_and_write(self, sock):
+        while(1):
+            sock.recv(1500)
+            self.receive_char_position(sock)
+                         
+            sock.recv(1500)    
+            sock.send(b'ACK')
+            self.receive_bomb_position(sock)
+            
+            
+            sock.recv(1500)    
+            sock.send(b'ACK')
+            self.send_map(sock)
+            
+            sock.recv(1500)    
+            sock.send(b'ACK')
+        return
        
     # time event 
     def tick(self, dt):
@@ -179,26 +199,12 @@ class NetworkServerController:
                                          
                     con.recv(1500)    
                     con.send(b'ACK')
-                        
                 
             else :
                 #print(self.model.player)
                 
                 try:
-                    sock.recv(1500)
-                    self.receive_char_position(sock)
-                                 
-                    sock.recv(1500)    
-                    sock.send(b'ACK')
-                    self.receive_bomb_position(sock)
-                    
-                    
-                    sock.recv(1500)    
-                    sock.send(b'ACK')
-                    self.send_map(sock)
-                    
-                    sock.recv(1500)    
-                    sock.send(b'ACK')
+                    Thread = threading.Thread(None, self.read_and_write, None, (sock,)).start()
                     
                 except BrokenPipeError as e:
                     print("[Ln204] Client disconnected: "+str(e))
