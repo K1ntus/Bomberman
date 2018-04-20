@@ -17,6 +17,10 @@ import time #time.sleep(1) #1000ms
 class NetworkServerController:
 
     def __init__(self, model, port):
+        threading.Thread.__init__(self)
+        self.verrou = threading.Lock()
+        self.threads = {}
+        
         self.model = model
         self.port = port
         self.s = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,proto=0, fileno=None)
@@ -195,11 +199,13 @@ class NetworkServerController:
        
     # time event 
     def tick(self, dt):
+        Thread = None
+        
 	# creation of sockets + connexion
         (readable_socket,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
         for sock in readable_socket:      #les sockets parmi la liste
-            Thread = threading.Thread(None, self.read_and_write, None, (sock,))
-
+            self.verrou.acquire()
+            
             if sock == self.s:
                     (con, (ip,a,b,c)) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
                     print("ip: "+str(ip)+' connected')
@@ -217,17 +223,23 @@ class NetworkServerController:
                                          
                     con.recv(1500)    
                     con.send(b'ACK')
+                    Thread = threading.Thread(None, self.read_and_write, None, (sock,)).start()
+                    self.threads[con] = Thread
 
 
                 
             else :
-                print("[")
-                for c in self.model.characters:
-                    print("Characters: "+str(c))
-                print("]")
+
                 
                 try:
-                    Thread.start()
+                    if self.threads[sock] is not None and self.threads[sock].is_alive():
+                        pass#already running
+                    else:
+                        Thread = threading.Thread(None, self.read_and_write, None, (sock,))
+                        self.threads[sock] = Thread
+                        Thread.start()
+                        pass#run a new thread
+
                     
                 except BrokenPipeError as e:
                     print("[Ln204] Client disconnected: "+str(e))
@@ -243,6 +255,11 @@ class NetworkServerController:
                     print("[Ln217] A socket disconnected: "+str(e))
                     self.disconnect(sock)
                     return
+                except RuntimeError as e:
+                    print("[Ln217] A socket disconnected: "+str(e))
+                    return
+            self.verrou.release()
+
                 
                 
         
@@ -322,20 +339,20 @@ class NetworkClientController:
         #print("| Map well received\n---\n")
 
     def send_bomb_data(self):
-        print("\n---\n| Sending new bomb data")
+        #print("\n---\n| Sending new bomb data")
         bombs_to_send = pickle.dumps(self.bomb_to_place)
         self.s.sendall(bombs_to_send)
-        print("| bomb data sent")
+        #print("| bomb data sent")
         self.s.recv(1500)
-        print("| Received ACK\n---\n")
+        #print("| Received ACK\n---\n")
         self.bomb_to_place = 'null'
         
     def send_my_pos(self):
-        print("\n---\n| Sending my position")
+        #print("\n---\n| Sending my position")
         self.s.send(pickle.dumps(self.model.look(self.nickname)))
-        print("| Position sent")
+        #print("| Position sent")
         self.s.recv(1500)
-        print("| Received ACK\n---\n")
+        #print("| Received ACK\n---\n")
         
     # keyboard events
 
