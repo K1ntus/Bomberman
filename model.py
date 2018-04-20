@@ -179,14 +179,9 @@ class Character:
         else: self.immunity = 0
         if self.disarmed > 0: self.disarmed -= dt
         else: self.disarmed = 0
-
-        '''
-        print("pushing value:  " +str(self.pushing)) 
-        if self.pushing > 0:
-            self.pushing -= dt
-            self.pushing_bomb()
+        if self.pushing > 0:  self.pushing -= dt
         else: self.pushing = 0
-        '''
+        
 
     def explosion(self, bomb):
         if bomb.countdown != 0: return False
@@ -217,31 +212,29 @@ class Model:
         
     def pushing_bomb(self): #(0,0) = en haut a gauche
         for c in self.characters:
-            '''
+            (a,b) = c.pos
             if c.pushing == 0:
-                print("CANT PUSH")
                 return
-            '''
             if c.direction == DIRECTION_RIGHT:
                 for bombs in self.bombs:
                     (x,y) = bombs.pos
-                    if (c.pos.x +1) == x:
-                        print("IL Y A UNE BOMBE A POUSSER, GG")
+                    if (a +1) == x:
+                        bombs.pos = (x,x+1)
             if c.direction == DIRECTION_LEFT:
                 for bombs in self.bombs:
                     (x,y) = bombs.pos
-                    if (c.pos.x -1) == x:
-                        print("IL Y A UNE BOMBE A POUSSER, GG")
+                    if (a -1) == x:
+                        bombs.pos = (x,x-1)
             if c.direction == DIRECTION_UP:
                 for bombs in self.bombs:
                     (x,y) = bombs.pos
-                    if (c.pos.y -1) == y:
-                        print("IL Y A UNE BOMBE A POUSSER, GG")
+                    if (b -1) == y:
+                        bombs.pos = (x,y-1)
             if c.direction == DIRECTION_DOWN:
                 for bombs in self.bombs:
                     (x,y) = bombs.pos
-                    if (c.pos.y +1) == y:
-                        print("IL Y A UNE BOMBE A POUSSER, GG")
+                    if (b +1) == y:
+                        bombs.pos = (x,y+1)
 
     # look for a character, return None if not found
     def look(self, nickname):
@@ -323,6 +316,8 @@ class Model:
             bomb.tick(dt)
             if bomb.countdown == -1:
                 self.bombs.remove(bomb)
+
+        self.pushing_bomb()
 
         # update characters and eat fruits
         for character in self.characters:
