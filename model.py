@@ -125,6 +125,33 @@ class Character:
         self.nickname = nickname
         self.pos = pos
         self.direction = DIRECTION_RIGHT
+        self.pushing = 0 #  the character can push bomb during those ticks
+
+    def pushing_bomb(self): #(0,0) = en haut a gauche
+        if pushing == 0:
+            print("CANT PUSH")
+            return
+        if self.direction == DIRECTION_RIGHT:
+            for bombs in self.bombs:
+                (x,y) = bombs.pos
+                if (self.pos.x +1) == x:
+                    print("IL Y A UNE BOMBE A POUSSER, GG")
+        if self.direction == DIRECTION_LEFT:
+            for bombs in self.bombs:
+                (x,y) = bombs.pos
+                if (self.pos.x -1) == x:
+                    print("IL Y A UNE BOMBE A POUSSER, GG")
+        if self.direction == DIRECTION_UP:
+            for bombs in self.bombs:
+                (x,y) = bombs.pos
+                if (self.pos.y -1) == y:
+                    print("IL Y A UNE BOMBE A POUSSER, GG")
+        if self.direction == DIRECTION_DOWN:
+            for bombs in self.bombs:
+                (x,y) = bombs.pos
+                if (self.pos.y +1) == y:
+                    print("IL Y A UNE BOMBE A POUSSER, GG")
+        
 
     def move(self, direction):
         # move right
@@ -157,6 +184,9 @@ class Character:
             if fruit.kind == STAR:
                 self.immunity = 10000#10 seconds
                 print("{}\'s immunity: {}".format(self.nickname, self.immunity))
+            elif fruit.kind == PUSH:
+                self.pushing = 5000#5 seconds
+                print("{}\'s immunity: {}".format(self.nickname, self.immunity))
             else:
                 self.health += 10
                 print("{}\'s health: {}".format(self.nickname, self.health))
@@ -169,6 +199,10 @@ class Character:
         else: self.immunity = 0
         if self.disarmed > 0: self.disarmed -= dt
         else: self.disarmed = 0
+        if self.pushing > 0:
+            self.pushing -= dt
+            self.pushing_bomb()
+        else: self.pushing = 0
 
     def explosion(self, bomb):
         if bomb.countdown != 0: return False
