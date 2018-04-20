@@ -174,6 +174,7 @@ class NetworkServerController:
 
 
     def read_and_write(self, sock):
+        try:
             sock.recv(1500)
             self.receive_char_position(sock)
                          
@@ -188,8 +189,9 @@ class NetworkServerController:
             
             sock.recv(1500)    
             sock.send(b'ACK')
-
-            return
+        except OSError as e:
+            print("A client as disconnected:   "+str(e))
+        return
        
     # time event 
     def tick(self, dt):
