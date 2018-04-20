@@ -123,6 +123,10 @@ class NetworkServerController:
                             print("[LN100] A socket disconnected: "+str(e))
                             self.disconnect(socket)
                             return
+                        except RuntimeError as e:
+                            print("[LN100] A socket disconnected: "+str(e))
+                            self.disconnect(socket)
+                            return
 
                     inc = inc+1
                     
@@ -138,6 +142,9 @@ class NetworkServerController:
             print("DROPPING A BOMB BY:  "+str(nickname))
             character = self.model.look(nickname)
             #self.model.drop_bomb(nickname)
+            for bomb in self.model.bombs:   #On parcours les bombes deja placees
+                if bomb.pos == character.pos:
+                    return
             self.model.bombs.append(Bomb(self.model.map, character.pos))
                 
                 
@@ -301,7 +308,7 @@ class NetworkClientController:
         #print("\n---\n| Receiving map")
 
         #print("| Receiving characters ...")
-        characters = pickle.loads(self.s.recv(1500))
+        characters = pickle.loads(self.s.recv(65536))
         if not characters: characters_array = []
         else:
             characters_array = characters
@@ -310,7 +317,7 @@ class NetworkClientController:
         model.characters = characters
 
         #print("| Receiving fruits ...")
-        fruits = pickle.loads(self.s.recv(1500))
+        fruits = pickle.loads(self.s.recv(65536))
         if not fruits: fruits_array = []
         else:
             fruits_array = fruits
@@ -319,7 +326,7 @@ class NetworkClientController:
         model.fruits = fruits
 
         #print("| Receiving bombs ...")
-        bombs = pickle.loads(self.s.recv(1500))
+        bombs = pickle.loads(self.s.recv(65536))
         if not bombs: bombs_array = []
         else:
             bombs_array = bombs
@@ -329,11 +336,11 @@ class NetworkClientController:
         
 
         #print("| Receiving map data ...")
-        model.map.width = pickle.loads(self.s.recv(1500))
+        model.map.width = pickle.loads(self.s.recv(65536))
         self.s.send(b"ACK")
-        model.map.height = pickle.loads(self.s.recv(1500))
+        model.map.height = pickle.loads(self.s.recv(1024))
         self.s.send(b"ACK")
-        model.map.array = pickle.loads(self.s.recv(1500))
+        model.map.array = pickle.loads(self.s.recv(1024))
         self.s.send(b"ACK")
         
         #print("| Map well received\n---\n")
