@@ -59,7 +59,7 @@ class NetworkServerController:
         (ip,a,b,c) = self.s.getsockname()
         self.nick_dictionnary={self.s:"server"}
 
-        self.tick_before_event = 0
+        self.tick_before_event = 0      #compteur entre chaque evenements serveurs
 
 
 
@@ -230,22 +230,20 @@ class NetworkServerController:
         try:
             (ip,a,b,c)=socket.getsockname()
         except OSError as e:
-            print("nick dico:" +str(self.nick_dictionnary))
-            print("socket list:" +str(self.liste_socket))
-            print("oups: "+str(e))
+            print("[0x0f]: "+str(e))
             return
         
-        nick_to_remove = self.nick_dictionnary[socket]
-        for i in self.nick_dictionnary:
-            if self.nick_dictionnary[i] == nick_to_remove:
-                self.model.quit(self.nick_dictionnary[socket])
-                self.nick_dictionnary.pop(i)
+        nick_to_remove = self.nick_dictionnary[socket]              #on recupere le pseudo de la socket
+        for i in self.nick_dictionnary:                             
+            if self.nick_dictionnary[i] == nick_to_remove:          #si la pos i est celle du pseudo
+                self.model.quit(self.nick_dictionnary[socket])      #on expulse le joueur avec ce pseudo
+                self.nick_dictionnary.pop(i)                        #on retire son pseudo du dictionnaire
                 break
-        self.liste_socket.remove(socket)
+        self.liste_socket.remove(socket)    #on retire sa socket de la liste
         socket.close()                      #close the socket
 
 
-    def death(self, sock):
+    def death(self, sock):  #TO DO
         self.disconnect(sock)
         
         
@@ -267,7 +265,7 @@ class NetworkServerController:
                 
                 sock.recv(1500)    
                 sock.send(b'ACK')
-            else:
+            else:#TO DO (s il n y a pas le nickname de la socket dans le dico, ie. son perso est mort)
                 self.send_map(sock)
                 
                 sock.recv(1500)    
@@ -282,10 +280,9 @@ class NetworkServerController:
     # time event 
     def tick(self, dt):
         Thread = None
-        if len(self.liste_socket) > (MIN_PLAYER_FOR_EVENT):
-            self.tick_before_event += dt
-        #print(self.tick_before_event)
-        self.map_event()
+        if len(self.liste_socket) > (MIN_PLAYER_FOR_EVENT): #s il y a au moins deux joueurs
+            self.tick_before_event += dt                    #a chaque tick, on incremente le compteur avant un event
+        self.map_event()                                    #on appelle la fonction gerant les events 
 
         
 	# creation of sockets + connexion
@@ -302,15 +299,15 @@ class NetworkServerController:
                     print("ip: "+str(ip)+' connected')
 
                     
-                    self.liste_socket.append(con)
+                    self.liste_socket.append(con)       #on ajoute la nouvelle socket a la liste des sockets
                     
-                    self.first_connection(con, con.recv(1500).decode())
+                    self.first_connection(con, con.recv(1500).decode()) #fonction recuperant le nickname, etc de la socket venant de se connecter
                     
                         
                     con.send(b'ACK')
-                    con.recv(1500)
+                    con.recv(1500)  #paquets servant d accuses de reception pour ne pas 'corrompre les differents paquets
                         
-                    self.send_map(con)
+                    self.send_map(con)  #on envoie la map a la socket
                                          
                     con.recv(1500)    
                     con.send(b'ACK')
@@ -321,6 +318,10 @@ class NetworkServerController:
                     #puis on l ajoute au dictionnaire de notre class
                     Thread = threading.Thread(None, self.read_and_write, None, (sock,)).start()
                     self.threads[con] = Thread
+
+
+                    #ESSAYER CA MB
+                    #self.verrou.release()#on deverouille le verrou qui etait utilise par le thread de cette socket
 
 
                 
