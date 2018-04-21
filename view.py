@@ -25,7 +25,7 @@ SPRITE_WALLS = [ "images/misc/wall0.png", "images/misc/wall1.png", "images/misc/
 SPRITE_BOMB = "images/misc/bomb.png"
 SPRITE_FIRE = "images/misc/fire.png"
 
-SPRITE_PBOMB = "images/misc/cherry.png"
+SPRITE_PBOMB = "images/misc/p_bomb.png"
 SPRITE_BLUE_FIRE = "images/misc/blue_fire.png"
 
 SPRITE_FRUITS = ["images/misc/banana.png", "images/misc/cherry.png" , "images/misc/star.png",  "images/misc/push.png" ]
@@ -147,7 +147,7 @@ class GraphicView:
         if(p_bomb.countdown == 0):
             self.render_pbomb_explosion(p_bomb)
         elif(p_bomb.countdown > 0):
-            self.render_bomb(p_bomb)
+            self.render_pbomb_drop(p_bomb)
 ######## PBOMB #########
 
             
