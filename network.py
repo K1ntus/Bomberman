@@ -24,11 +24,11 @@ STAR_RAIN = 3       #generating a star: invulnerability 1k ms
 
 #multiple time the same event for probability
 SERVER_EVENTS = [
-        BAN_HAMMER, BAN_HAMMER,                #2 - one bomb on each characters
-        CRAZY_FRUIT, CRAZY_FRUIT, CRAZY_FRUIT, #4 - 2 fruits appears
-        ISSOU, ISSOU, ISSOU, ISSOU,            #3 - nothing
-        STAR_RAIN
-    ]                             #1 - invulnerability
+        BAN_HAMMER, BAN_HAMMER,                 #2 - one bomb on each characters
+        CRAZY_FRUIT, CRAZY_FRUIT, CRAZY_FRUIT,  #4 - 2 fruits appears
+        ISSOU, ISSOU, ISSOU, ISSOU,             #3 - nothing
+        STAR_RAIN                               #1 - invulnerability
+    ]                             
 
 TICK_BEFORE_EVENT = 12500     #tick etween each server events in ms
 MIN_PLAYER_FOR_EVENT = 2    #Minimal numbers of players to allow server events
@@ -42,13 +42,14 @@ class NetworkServerController:
 
     def __init__(self, model, port):
         threading.Thread.__init__(self)
-        self.verrou = threading.Lock()
-        self.threads = {}
+        self.verrou = threading.Lock()      #verrou pour synchroniser les threads
+        self.threads = {}                   #dictionnaire contenant de la forme SOCKET_CLIENT:THREAD_CLIENT
         
         self.model = model
         self.port = port
-        self.s = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,proto=0, fileno=None)
-        self.s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+        
+        self.s = socket.socket(family=socket.AF_INET6,type=socket.SOCK_STREAM,proto=0, fileno=None) #On cree la socket server ipv6
+        self.s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)                                  #on bypass le cas ou le port est deja utilise          
         self.s.setblocking(False)
         self.s.bind(('',port))
         self.s.listen(1)
@@ -60,27 +61,30 @@ class NetworkServerController:
 
         self.tick_before_event = 0
 
-    def event_banHammer(self):
+
+
+
+    def event_banHammer(self):  
         for c in self.model.characters:
             self.model.drop_bomb(c.nickname)
         
-    def map_event(self):
+    def map_event(self):    #fonction principale permettant la gestion des evenements aleatoires 
         if self.tick_before_event >= TICK_BEFORE_EVENT:
             choice = random.choice(SERVER_EVENTS)
             self.tick_before_event = 0
             
-            if choice == BAN_HAMMER:
+            if choice == BAN_HAMMER:    #Un evenement qui 'invoque' des bombes sous les pieds de chaques joueurs
                 print("SERVER EVENT: ban hammer !")
                 self.event_banHammer()
                 return
-            elif choice == STAR_RAIN:
+            elif choice == STAR_RAIN:   #genere une etoile qui rend invulnerable
                 print("SERVER EVENT: star rain !")
                 self.model.add_fruit(STAR)
                 return
-            elif choice == ISSOU:
+            elif choice == ISSOU:       #Aucun event
                 print("SERVER EVENT: issou !")
                 return
-            elif choice == CRAZY_FRUIT:
+            elif choice == CRAZY_FRUIT: #Ajoute deux fruits aleatoirement
                 print("SERVER EVENT: crazy fruit !")
                 for _ in range(2): self.model.add_fruit()
                 return
@@ -191,10 +195,15 @@ class NetworkServerController:
         if not data == 'null':
             print("DROPPING A BOMB BY:  "+str(nickname))
             character = self.model.look(nickname)
-            #self.model.drop_bomb(nickname)
-            for bomb in self.model.bombs:   #On parcours les bombes deja placees
+
+
+            #Boucle for parcourant toutes les bombes deja placees
+            #S'il y a deja une bombe a cette position, on quitte la fonction
+            #sinon: on place une bombe a la position du joueur
+            for bomb in self.model.bombs:
                 if bomb.pos == character.pos:
                     return
+                
             self.model.bombs.append(Bomb(self.model.map, character.pos))
                 
                 
@@ -215,6 +224,8 @@ class NetworkServerController:
         self.nick_dictionnary[socket] = new_nick_wanted
         self.model.add_character(self.nick_dictionnary[socket], isplayer = True)
 
+
+
     def disconnect(self,socket):
         try:
             (ip,a,b,c)=socket.getsockname()
@@ -232,6 +243,7 @@ class NetworkServerController:
                 break
         self.liste_socket.remove(socket)
         socket.close()                      #close the socket
+
 
 
     def read_and_write(self, sock):
@@ -253,6 +265,8 @@ class NetworkServerController:
         except OSError as e:
             print("A client as disconnected:   "+str(e))
         return
+
+
        
     # time event 
     def tick(self, dt):
@@ -266,10 +280,10 @@ class NetworkServerController:
 	# creation of sockets + connexion
         (readable_socket,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
         
-        for sock in readable_socket:      #les sockets parmi la liste
-            self.verrou.acquire()
+        for sock in readable_socket:                    #les sockets parmi la liste
+            self.verrou.acquire()                       #On 'desactive' les autres threads
             
-            if sock == self.s:
+            if sock == self.s:  #premiere connexion
                     (con, (ip,a,b,c)) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
                     print("ip: "+str(ip)+' connected')
 
@@ -286,18 +300,25 @@ class NetworkServerController:
                                          
                     con.recv(1500)    
                     con.send(b'ACK')
+
+                    
+
+                    #on cree un nouveau thread (que l on  demarre)
+                    #puis on l ajoute au dictionnaire de notre class
                     Thread = threading.Thread(None, self.read_and_write, None, (sock,)).start()
                     self.threads[con] = Thread
 
 
                 
-            else :
+            else :  #si ce n est pas la premiere connexion
 
                 
                 try:
-                    if self.threads[sock] is not None and self.threads[sock].is_alive():
+                    if self.threads[sock] is not None and self.threads[sock].is_alive():        #si le thread est deja en train de fonctionner
                         pass#already running
-                    else:
+                    
+                    else:   #si il n y a pas de thread pour cette socket
+                        #on cree un nouveau thread etc
                         Thread = threading.Thread(None, self.read_and_write, None, (sock,))
                         self.threads[sock] = Thread
                         Thread.start()
@@ -321,7 +342,7 @@ class NetworkServerController:
                 except RuntimeError as e:
                     print("[Ln217] A socket disconnected: "+str(e))
                     return
-            self.verrou.release()
+            self.verrou.release()#on deverouille le verrou qui etait utilise par le thread de cette socket
 
                 
                 

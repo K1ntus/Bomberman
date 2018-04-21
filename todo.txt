@@ -1,16 +1,18 @@
 Bug:
-	Conflit lors de la pose de bombes (peuvent se superposer) - réglé je crois
+	- Conflit lors de la pose de bombes (peuvent se superposer) - réglé je crois
+	- Carre rouge du joueur ne se deplacant pas
 
-	Deconnexion:
+	- Deconnexion:
 		Quitter le serveur
 		Mort naturelle par bombe
 
-
-En gros il ne manque que les points 6 et 7 :
-    - gestion des erreurs (mort violente d'un client, coupure réseau) ;
-    - ajout de bonus FUN dans le jeu, impliquant de faire du réseau ! Par exemple, un téléporteur qui permet de faire passer une joueur de la map d'u premier serveur à celle d'un second clin d’œil
+A finir:
+	En gros il ne manque que les points 6 et 7 :
+	    - gestion des erreurs (mort violente d'un client, coupure réseau) ;
+	    - ajout de bonus FUN dans le jeu, impliquant de faire du réseau ! Par exemple, un téléporteur qui permet de faire passer une joueur de la map du premier serveur à celle d'un second
 
 
 
 
 Commencer à faire le rapport
+Schéma en UML ?
