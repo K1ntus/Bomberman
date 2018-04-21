@@ -273,7 +273,7 @@ class NetworkServerController:
         Thread = None
         if len(self.liste_socket) > (MIN_PLAYER_FOR_EVENT):
             self.tick_before_event += dt
-        print(self.tick_before_event)
+        #print(self.tick_before_event)
         self.map_event()
 
         
