@@ -226,11 +226,15 @@ class Model:
     # initialize model
     def __init__(self):
         self.map = Map()
+        
         self.characters = []
+        
         self.fruits = []
+        
         self.bombs = []
-        self.player = None
         self.p_bombs = []
+        
+        self.player = None
 
     # look for a character, return None if not found
     def look(self, nickname):
@@ -330,6 +334,12 @@ class Model:
             bomb.tick(dt)
             if bomb.countdown == -1:
                 self.bombs.remove(bomb)
+                
+        # update pbombs (and remove it)
+        for bomb in self.p_bombs:
+            bomb.tick(dt)
+            if bomb.countdown == -1:
+                self.p_bombs.remove(bomb)
 
         # update characters and eat fruits
         for character in self.characters:
@@ -338,8 +348,14 @@ class Model:
                 if character.eat(fruit):
                     self.fruits.remove(fruit)
 
-        # update characters after bomb explosion
+        # update characters after pbomb explosion
         for bomb in self.bombs:
+            for character in self.characters:
+                if character.explosion(bomb):
+                    self.characters.remove(character)
+                    self.player = None
+        # update characters after bomb explosion
+        for bomb in self.p_bombs:
             for character in self.characters:
                 if character.explosion(bomb):
                     self.characters.remove(character)

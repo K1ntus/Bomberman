@@ -25,7 +25,7 @@ SPRITE_WALLS = [ "images/misc/wall0.png", "images/misc/wall1.png", "images/misc/
 SPRITE_BOMB = "images/misc/bomb.png"
 SPRITE_FIRE = "images/misc/fire.png"
 
-SPRITE_PBOMB = "images/misc/bomb.png"
+SPRITE_PBOMB = "images/misc/cherry.png"
 SPRITE_BLUE_FIRE = "images/misc/blue_fire.png"
 
 SPRITE_FRUITS = ["images/misc/banana.png", "images/misc/cherry.png" , "images/misc/star.png",  "images/misc/push.png" ]
@@ -143,11 +143,11 @@ class GraphicView:
         rect = text.get_rect(center=(x0-5,y0+5))
         self.win.blit(text, rect)
 
-    def render_pbomb(self, bomb):
-        if(bomb.countdown == 0):
-            self.render_pbomb_explosion(bomb)
-        elif(bomb.countdown > 0):
-            self.render_pbomb_drop(bomb)
+    def render_pbomb(self, p_bomb):
+        if(p_bomb.countdown == 0):
+            self.render_pbomb_explosion(p_bomb)
+        elif(p_bomb.countdown > 0):
+            self.render_bomb(p_bomb)
 ######## PBOMB #########
 
             
@@ -169,8 +169,8 @@ class GraphicView:
         self.render_map(self.model.map)
         for bomb in self.model.bombs:
             self.render_bomb(bomb)
-        for pbomb in self.model.p_bombs:
-            self.render_pbomb(pbomb)
+        for p_bomb in self.model.p_bombs:
+            self.render_pbomb(p_bomb)
         for fruit in self.model.fruits:
             self.render_fruit(fruit)
         for character in self.model.characters:
