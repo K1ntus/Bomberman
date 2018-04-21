@@ -305,19 +305,7 @@ class Model:
                 self.bombs.append(Bomb(self.map, character.pos))
                 character.disarmed = DISARMED
                 print("=> drop bomb at position ({},{})".format(character.pos[X], character.pos[Y]))
-    '''
-    # drop a p-bomb
-    def drop_p_bomb(self, nickname):
-        character = self.look(nickname)
-        if not character:
-            print("Error: nickname \"{}\" not found!".format(nickname))
-            sys.exit(1)
-        if character.disarmed == 0:
-            self.p_bombs.append(PBomb(self.map, character.pos))
-            character.disarmed = DISARMED
-            character.p_bomb_available = 0
-        print("=> drop bomb at position ({},{})".format(character.pos[X], character.pos[Y]))
-    '''
+
     # move a character
     def move_character(self, nickname, direction):
         character = self.look(nickname)

@@ -194,11 +194,13 @@ class NetworkServerController:
         data = pickle.loads(socket.recv(1500))
         socket.send(b'ACK')
         
+        data2 = pickle.loads(socket.recv(1500))
+        socket.send(b'ACK')
+        
         if not data == 'null':
             print("DROPPING A BOMB BY:  "+str(nickname))
             character = self.model.look(nickname)
-
-
+            
             #Boucle for parcourant toutes les bombes deja placees
             #S'il y a deja une bombe a cette position, on quitte la fonction
             #sinon: on place une bombe a la position du joueur
@@ -207,6 +209,16 @@ class NetworkServerController:
                     return
                 
             self.model.bombs.append(Bomb(self.model.map, character.pos))
+        
+        if not data2 == 'null':
+            print("DROPPING A PBOMB BY:  "+str(nickname))
+            character = self.model.look(nickname)
+            
+            for bomb in self.model.p_bombs:
+                if bomb.pos == character.pos:
+                    return
+                
+            self.model.p_bombs.append(PBomb(self.model.map, character.pos))
                 
                 
 
@@ -427,9 +439,14 @@ class NetworkClientController:
     def send_bomb_data(self):
         #print("\n---\n| Sending new bomb data")
         bombs_to_send = pickle.dumps(self.bomb_to_place)
+        pbombs_to_send = pickle.dumps(self.bomb_to_place)
+        
         self.s.sendall(bombs_to_send)
-        #print("| bomb data sent")
         self.s.recv(1500)
+        
+        self.s.sendall(pbombs_to_send)
+        self.s.recv(1500)
+        
         #print("| Received ACK\n---\n")
         self.bomb_to_place = 'null'
         
