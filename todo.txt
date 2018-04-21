@@ -1,7 +1,4 @@
 Bug:
-	- Conflit lors de la pose de bombes (peuvent se superposer) - réglé je crois
-	- Carre rouge du joueur ne se deplacant pas
-
 	- Deconnexion:
 		Quitter le serveur
 		Mort naturelle par bombe
@@ -10,6 +7,10 @@ A finir:
 	En gros il ne manque que les points 6 et 7 :
 	    - gestion des erreurs (mort violente d'un client, coupure réseau) ;
 	    - ajout de bonus FUN dans le jeu, impliquant de faire du réseau ! Par exemple, un téléporteur qui permet de faire passer une joueur de la map du premier serveur à celle d'un second
+			-> j'ai commencé à faire sur la branche item_psh (resp. breaking_bomb) un item donnant la capacité de pousser les bombes 					(resp. une bombe avec une explosion qui traverse les murs)
+			-> item qui freeze tous les autres joueurs du serveur ?
+
+	- Mode spectateur une fois mort/nb de client trop élevé ?
 
 
 

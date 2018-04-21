@@ -245,23 +245,34 @@ class NetworkServerController:
         socket.close()                      #close the socket
 
 
+    def death(self, sock):
+        self.disconnect(sock)
+        
+        
 
     def read_and_write(self, sock):
         try:
-            sock.recv(1500)
-            self.receive_char_position(sock)
-                         
-            sock.recv(1500)    
-            sock.send(b'ACK')
-            self.receive_bomb_position(sock)
-            
-            
-            sock.recv(1500)    
-            sock.send(b'ACK')
-            self.send_map(sock)
-            
-            sock.recv(1500)    
-            sock.send(b'ACK')
+            if not self.nick_dictionnary.get(sock) == None:
+                sock.recv(1500)
+                self.receive_char_position(sock)
+                             
+                sock.recv(1500)    
+                sock.send(b'ACK')
+                self.receive_bomb_position(sock)
+                
+                
+                sock.recv(1500)    
+                sock.send(b'ACK')
+                self.send_map(sock)
+                
+                sock.recv(1500)    
+                sock.send(b'ACK')
+            else:
+                self.send_map(sock)
+                
+                sock.recv(1500)    
+                sock.send(b'ACK')
+                
         except OSError as e:
             print("A client as disconnected:   "+str(e))
         return
@@ -281,6 +292,9 @@ class NetworkServerController:
         (readable_socket,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
         
         for sock in readable_socket:                    #les sockets parmi la liste
+            
+
+                    
             self.verrou.acquire()                       #On 'desactive' les autres threads
             
             if sock == self.s:  #premiere connexion
@@ -341,6 +355,7 @@ class NetworkServerController:
                     return
                 except RuntimeError as e:
                     print("[Ln217] A socket disconnected: "+str(e))
+                    self.disconnect(sock)
                     return
             self.verrou.release()#on deverouille le verrou qui etait utilise par le thread de cette socket
 
@@ -378,6 +393,8 @@ class NetworkClientController:
 
         self.s.send(b'ACK')
         self.s.recv(1500)
+        
+        self.model.player = self.model.look(nickname)
 
     def receive_map(self,model):
         #print("\n---\n| Receiving map")
@@ -467,29 +484,43 @@ class NetworkClientController:
             
         return True
 
+    def spectate(self):
+        print("a")
+        #foncton appelée pour charger les data apres que le joueur soit mort
+
     # time event
-
     def tick(self, dt):
-
-        
-        self.s.send(b'ACK')
-
-
-        self.send_my_pos()
-        self.s.send(b'ACK')
-        self.s.recv(1500)
+        if not self.model.look(self.nickname) == None:
+            print("usual tick")
+            
+            self.s.send(b'ACK')
 
 
-        self.send_bomb_data()
-        self.s.send(b'ACK')
-        self.s.recv(1500)
+            self.send_my_pos()
+            self.s.send(b'ACK')
+            self.s.recv(1500)
 
-        
-        self.receive_map(self.model)
-        self.s.send(b'ACK')
-        self.s.recv(1500)
-        
-        self.model.player = self.model.look(self.nickname)
+
+            self.send_bomb_data()
+            self.s.send(b'ACK')
+            self.s.recv(1500)
+
+            
+            self.receive_map(self.model)
+            self.s.send(b'ACK')
+            self.s.recv(1500)
+        else:
+            print("SPECTATING")
+            self.receive_map(self.model)
+            self.s.send(b'ACK')
+            self.s.recv(1500)
+            
+        try:
+            self.model.player = self.model.look(self.nickname)
+        except AttributeError as e:
+            self.model.player = None
+            print("[0x001] disconnected: "+str(e))
+            return False
 
         
         return True
