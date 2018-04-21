@@ -222,7 +222,7 @@ class NetworkServerController:
             i=i+1
          
         self.nick_dictionnary[socket] = new_nick_wanted
-        self.model.add_character(self.nick_dictionnary[socket], isplayer = True)
+        self.model.add_character(self.nick_dictionnary[socket], isplayer = False)
 
 
 
@@ -379,8 +379,6 @@ class NetworkClientController:
         self.s.send(b'ACK')
         self.s.recv(1500)
 
-        self.model.player = self.model.look(nickname)
-
     def receive_map(self,model):
         #print("\n---\n| Receiving map")
 
@@ -472,6 +470,7 @@ class NetworkClientController:
     # time event
 
     def tick(self, dt):
+
         
         self.s.send(b'ACK')
 
@@ -489,6 +488,8 @@ class NetworkClientController:
         self.receive_map(self.model)
         self.s.send(b'ACK')
         self.s.recv(1500)
+        
+        self.model.player = self.model.look(self.nickname)
 
         
         return True
