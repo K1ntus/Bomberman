@@ -24,7 +24,11 @@ SPRITE_BLANK = "images/misc/blank.png"
 SPRITE_WALLS = [ "images/misc/wall0.png", "images/misc/wall1.png", "images/misc/wall2.png" ]
 SPRITE_BOMB = "images/misc/bomb.png"
 SPRITE_FIRE = "images/misc/fire.png"
-SPRITE_FRUITS = [ "images/misc/push.png", "images/misc/banana.png", "images/misc/cherry.png" , "images/misc/star.png" ]
+
+SPRITE_PBOMB = "images/misc/bomb.png"
+SPRITE_BLUE_FIRE = "images/misc/blue_fire.png"
+
+SPRITE_FRUITS = ["images/misc/banana.png", "images/misc/cherry.png" , "images/misc/star.png",  "images/misc/push.png" ]
 SPRITE_DK = [ "images/dk/left.png", "images/dk/right.png", "images/dk/up.png", "images/dk/down.png" ]
 SPRITE_ZELDA = [ "images/zelda/left.png", "images/zelda/right.png", "images/zelda/up.png", "images/zelda/down.png" ]
 SPRITE_BATMAN = [ "images/batman/left.png", "images/batman/right.png", "images/batman/up.png", "images/batman/down.png" ]
@@ -45,8 +49,13 @@ class GraphicView:
         self.sprite_backgrounds = [ pygame.image.load(sprite).convert() for sprite in SPRITE_BACKGROUNDS ]
         self.sprite_blank = pygame.image.load(SPRITE_BLANK).convert()
         self.sprite_fruits = [ pygame.image.load(sprite).convert_alpha() for sprite in SPRITE_FRUITS ]
+        
         self.sprite_bomb = pygame.image.load(SPRITE_BOMB).convert_alpha()
         self.sprite_fire = pygame.image.load(SPRITE_FIRE).convert_alpha()
+        
+        self.sprite_pbomb = pygame.image.load(SPRITE_PBOMB).convert_alpha()
+        self.sprite_blue_fire = pygame.image.load(SPRITE_BLUE_FIRE).convert_alpha()
+        
         sprite_dk = [ pygame.image.load(sprite).convert_alpha() for sprite in SPRITE_DK ]
         sprite_zelda = [ pygame.image.load(sprite).convert_alpha() for sprite in SPRITE_ZELDA ]
         sprite_batman = [ pygame.image.load(sprite).convert_alpha() for sprite in SPRITE_BATMAN ]
@@ -113,6 +122,36 @@ class GraphicView:
         elif(bomb.countdown > 0):
             self.render_bomb_drop(bomb)
 
+
+
+######## PBOMB #########
+    def render_pbomb_explosion(self, bomb):
+        x0 = bomb.pos[X]
+        y0 = bomb.pos[Y]
+        for x in range(bomb.range[DIRECTION_LEFT], bomb.range[DIRECTION_RIGHT]+1):
+            self.win.blit(self.sprite_blue_fire, (x*SPRITE_SIZE, y0*SPRITE_SIZE))
+        for y in range(bomb.range[DIRECTION_UP], bomb.range[DIRECTION_DOWN]+1):
+            self.win.blit(self.sprite_blue_fire, (x0*SPRITE_SIZE, y*SPRITE_SIZE))
+
+    def render_pbomb_drop(self, bomb):
+        x = bomb.pos[X] * SPRITE_SIZE
+        y = bomb.pos[Y] * SPRITE_SIZE
+        self.win.blit(self.sprite_pbomb, (x, y))
+        x0 = x + SPRITE_SIZE/2
+        y0 = y + SPRITE_SIZE/2
+        text = self.font.render(str(bomb.countdown), True, YELLOW)
+        rect = text.get_rect(center=(x0-5,y0+5))
+        self.win.blit(text, rect)
+
+    def render_pbomb(self, bomb):
+        if(bomb.countdown == 0):
+            self.render_pbomb_explosion(bomb)
+        elif(bomb.countdown > 0):
+            self.render_pbomb_drop(bomb)
+######## PBOMB #########
+
+            
+
     def render_character(self, character):
         x = character.pos[X] * SPRITE_SIZE
         y = character.pos[Y] * SPRITE_SIZE
@@ -130,6 +169,8 @@ class GraphicView:
         self.render_map(self.model.map)
         for bomb in self.model.bombs:
             self.render_bomb(bomb)
+        for pbomb in self.model.p_bombs:
+            self.render_pbomb(pbomb)
         for fruit in self.model.fruits:
             self.render_fruit(fruit)
         for character in self.model.characters:

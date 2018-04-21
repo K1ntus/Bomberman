@@ -33,7 +33,7 @@ PUSH = 3
 BANANA = 0
 CHERRY = 1
 FRUITS_USUAL = [BANANA, CHERRY]
-FRUITS = [PUSH, BANANA, CHERRY, STAR]
+FRUITS = [BANANA, CHERRY, STAR, PUSH]
 FRUITS_STR = [ "banana", "cherry", "star","push"]
 
 # character
@@ -44,6 +44,7 @@ CHARACTERS = [DK, ZELDA, BATMAN]
 CHARACTERS_STR = ["dk", "zelda", "batman"]
 HEALTH = 50
 MAX_RANGE = 5
+MAX_RANGE_PBOMB = 3
 COUNTDOWN = 5
 IMMUNITY = 1500 # in ms
 DISARMED = 2000 # in ms
@@ -113,6 +114,36 @@ class Bomb:
         else:
             self.countdown = -1
 
+            
+### Class PBomb ###
+
+class PBomb:
+    def __init__(self, m, pos):
+        self.map = m
+        self.pos = pos
+        self.max_range = MAX_RANGE_PBOMB
+        self.countdown = COUNTDOWN
+        self.time_to_explode = (COUNTDOWN+1)*1000-1 # in ms
+        
+        # compute bomb range
+        for xmax in range(self.pos[X], self.pos[X]+self.max_range+1):
+            if xmax >= m.width: break
+        for ymax in range(self.pos[Y], self.pos[Y]+self.max_range+1):
+            if ymax >= m.height: break
+        for xmin in range(self.pos[X], self.pos[X]-self.max_range-1, -1):
+            if xmin < 0: break
+        for ymin in range(self.pos[Y], self.pos[Y]-self.max_range-1, -1):
+            if ymin < 0: break
+        self.range = [xmin+1, xmax-1, ymin+1, ymax-1]
+
+    def tick(self, dt):
+        # subtract the passed time `dt` from the timer each frame
+        if self.time_to_explode >= 0:
+            self.time_to_explode -= dt
+            self.countdown = int(self.time_to_explode / 1000)
+        else:
+            self.countdown = -1
+
 ### Class Character ###
 
 class Character:
@@ -125,6 +156,7 @@ class Character:
         self.nickname = nickname
         self.pos = pos
         self.direction = DIRECTION_RIGHT
+        self.p_bomb_available = 0
 
     def move(self, direction):
         # move right
@@ -157,6 +189,9 @@ class Character:
             if fruit.kind == STAR:
                 self.immunity = 10000#10 seconds
                 print("{}\'s immunity: {}".format(self.nickname, self.immunity))
+            if fruit.kind == PUSH:
+                self.p_bomb_available = 1
+                print("{}\'s pbomb available: {}".format(self.nickname, self.p_bomb_available))
             else:
                 self.health += 10
                 print("{}\'s health: {}".format(self.nickname, self.health))
@@ -195,6 +230,7 @@ class Model:
         self.fruits = []
         self.bombs = []
         self.player = None
+        self.p_bombs = []
 
     # look for a character, return None if not found
     def look(self, nickname):
@@ -256,10 +292,28 @@ class Model:
             print("Error: nickname \"{}\" not found!".format(nickname))
             sys.exit(1)
         if character.disarmed == 0:
-            self.bombs.append(Bomb(self.map, character.pos))
+            if character.p_bomb_available > 0:
+                self.p_bombs.append(PBomb(self.map, character.pos))
+                character.disarmed = DISARMED
+                character.p_bomb_available = 0
+                print("=> drop Pbomb at position ({},{})".format(character.pos[X], character.pos[Y]))
+            else:
+                self.bombs.append(Bomb(self.map, character.pos))
+                character.disarmed = DISARMED
+                print("=> drop bomb at position ({},{})".format(character.pos[X], character.pos[Y]))
+    '''
+    # drop a p-bomb
+    def drop_p_bomb(self, nickname):
+        character = self.look(nickname)
+        if not character:
+            print("Error: nickname \"{}\" not found!".format(nickname))
+            sys.exit(1)
+        if character.disarmed == 0:
+            self.p_bombs.append(PBomb(self.map, character.pos))
             character.disarmed = DISARMED
+            character.p_bomb_available = 0
         print("=> drop bomb at position ({},{})".format(character.pos[X], character.pos[Y]))
-
+    '''
     # move a character
     def move_character(self, nickname, direction):
         character = self.look(nickname)
