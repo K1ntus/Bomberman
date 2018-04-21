@@ -23,12 +23,14 @@ ISSOU = 2           #no event
 STAR_RAIN = 3       #generating a star: invulnerability 1k ms
 
 #multiple time the same event for probability
-SERVER_EVENTS = [BAN_HAMMER, BAN_HAMMER,                #2 - one bomb on each characters
-                 CRAZY_FRUIT, CRAZY_FRUIT, CRAZY_FRUIT, #4 - 2 fruits appears
-                 ISSOU, ISSOU, ISSOU, ISSOU,            #3 - nothing
-                 STAR_RAIN]                             #1 - invulnerability
+SERVER_EVENTS = [
+        BAN_HAMMER, BAN_HAMMER,                #2 - one bomb on each characters
+        CRAZY_FRUIT, CRAZY_FRUIT, CRAZY_FRUIT, #4 - 2 fruits appears
+        ISSOU, ISSOU, ISSOU, ISSOU,            #3 - nothing
+        STAR_RAIN
+    ]                             #1 - invulnerability
 
-TICK_BEFORE_EVENT = 250     #tick etween each server events
+TICK_BEFORE_EVENT = 12500     #tick etween each server events in ms
 MIN_PLAYER_FOR_EVENT = 2    #Minimal numbers of players to allow server events
 
 
@@ -255,8 +257,9 @@ class NetworkServerController:
     # time event 
     def tick(self, dt):
         Thread = None
-        if len(self.liste_socket) > (MIN_PLAYER_FOR_EVENT+1):
-            self.tick_before_event = self.tick_before_event + 1
+        if len(self.liste_socket) > (MIN_PLAYER_FOR_EVENT):
+            self.tick_before_event += dt
+        print(self.tick_before_event)
         self.map_event()
 
         
