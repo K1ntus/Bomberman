@@ -492,7 +492,7 @@ class NetworkClientController:
 
     def tick(self, dt):
         character = self.model.look(self.nickname)
-        print("pbomb available: " + str(character.p_bomb_available))
+        #print("pbomb available: " + str(character.p_bomb_available))
         
         self.s.send(b'ACK')
 
