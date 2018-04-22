@@ -177,10 +177,6 @@ class NetworkServerController:
                             print("[LN100] A socket disconnected: "+str(e))
                             self.disconnect(socket)
                             return
-                        except RuntimeError as e:
-                            print("[LN100] A socket disconnected: "+str(e))
-                            self.disconnect(socket)
-                            return
 
                     inc = inc+1
                     
@@ -228,19 +224,16 @@ class NetworkServerController:
 
     def disconnect(self,socket):
         try:
-            (ip,a,b,c)=socket.getsockname()
-        except OSError as e:
-            print("[0x0f]: "+str(e))
-            return
-        
-        nick_to_remove = self.nick_dictionnary[socket]              #on recupere le pseudo de la socket
-        for i in self.nick_dictionnary:                             
-            if self.nick_dictionnary[i] == nick_to_remove:          #si la pos i est celle du pseudo
-                self.model.quit(self.nick_dictionnary[socket])      #on expulse le joueur avec ce pseudo
-                self.nick_dictionnary.pop(i)                        #on retire son pseudo du dictionnaire
-                break
-        self.liste_socket.remove(socket)    #on retire sa socket de la liste
-        socket.close()                      #close the socket
+            nick_to_remove = self.nick_dictionnary[socket]              #on recupere le pseudo de la socket
+            for i in self.nick_dictionnary:                             
+                if self.nick_dictionnary[i] == nick_to_remove:          #si la pos i est celle du pseudo
+                    self.model.quit(self.nick_dictionnary[socket])      #on expulse le joueur avec ce pseudo
+                    self.nick_dictionnary.pop(i)                        #on retire son pseudo du dictionnaire
+                    break
+            self.liste_socket.remove(socket)    #on retire sa socket de la liste
+            socket.close()                      #close the socket
+        except:
+            print("socket already closed")
 
 
     def death(self, sock):  #TO DO
@@ -270,9 +263,9 @@ class NetworkServerController:
                 
                 sock.recv(1500)    
                 sock.send(b'ACK')
-                
         except OSError as e:
-            print("A client as disconnected:   "+str(e))
+            print("[Ln101] A socket disconnected: "+str(e))
+            self.disconnect(socket)
         return
 
 
@@ -293,8 +286,9 @@ class NetworkServerController:
 
                     
             self.verrou.acquire()                       #On 'desactive' les autres threads
-            
-            if sock == self.s:  #premiere connexion
+            if sock == self.s and len(self.liste_socket) >2:    #2 joueurs max
+                continue
+            elif sock == self.s:  #premiere connexion
                     (con, (ip,a,b,c)) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
                     print("ip: "+str(ip)+' connected')
 
@@ -320,10 +314,6 @@ class NetworkServerController:
                     self.threads[con] = Thread
 
 
-                    #ESSAYER CA MB
-                    #self.verrou.release()#on deverouille le verrou qui etait utilise par le thread de cette socket
-
-
                 
             else :  #si ce n est pas la premiere connexion
 
@@ -339,25 +329,24 @@ class NetworkServerController:
                         Thread.start()
                         pass#run a new thread
 
-                    
+                
                 except BrokenPipeError as e:
                     print("[Ln204] Client disconnected: "+str(e))
                     self.disconnect(sock)
+                '''
                 except ConnectionResetError as e:
                     print("[Ln208] Client disconnected: "+str(e))
                     self.disconnect(sock)
                 except OSError as e:
                     print("[Ln212] A socket disconnected: "+str(e))
                     self.disconnect(sock)
-                    return
                 except EOFError as e:
                     print("[Ln217] A socket disconnected: "+str(e))
                     self.disconnect(sock)
-                    return
                 except RuntimeError as e:
                     print("[Ln217] A socket disconnected: "+str(e))
                     self.disconnect(sock)
-                    return
+                '''
             self.verrou.release()#on deverouille le verrou qui etait utilise par le thread de cette socket
 
                 
@@ -491,30 +480,23 @@ class NetworkClientController:
 
     # time event
     def tick(self, dt):
-        if not self.model.look(self.nickname) == None:
-            print("usual tick")
-            
-            self.s.send(b'ACK')
+        
+        self.s.send(b'ACK')
 
 
-            self.send_my_pos()
-            self.s.send(b'ACK')
-            self.s.recv(1500)
+        self.send_my_pos()
+        self.s.send(b'ACK')
+        self.s.recv(1500)
 
 
-            self.send_bomb_data()
-            self.s.send(b'ACK')
-            self.s.recv(1500)
+        self.send_bomb_data()
+        self.s.send(b'ACK')
+        self.s.recv(1500)
 
-            
-            self.receive_map(self.model)
-            self.s.send(b'ACK')
-            self.s.recv(1500)
-        else:
-            print("SPECTATING")
-            self.receive_map(self.model)
-            self.s.send(b'ACK')
-            self.s.recv(1500)
+        
+        self.receive_map(self.model)
+        self.s.send(b'ACK')
+        self.s.recv(1500)
             
         try:
             self.model.player = self.model.look(self.nickname)
