@@ -84,6 +84,8 @@ class BonusItem:
         self.pos = pos
         self.kind = kind
 
+        
+
     
 ### Class Fruit ###
 
@@ -251,6 +253,11 @@ class Model:
         self.items.append(BonusItem(kind, self.map, pos))
         print("=> add item ({}) at position ({},{})".format(BONUS_STR[kind], pos[X], pos[Y]))
 
+    def fire_pulse(self, nickname):
+        for c in self.characters:
+            if not nickname == c.nickname:
+                c.health -=10
+                
     # add a new character
     def add_character(self, nickname, isplayer = False, kind = None, pos = None):
         character = self.look(nickname)
