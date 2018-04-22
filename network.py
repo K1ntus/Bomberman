@@ -79,7 +79,7 @@ class NetworkServerController:
                 return
             elif choice == STAR_RAIN:   #genere une etoile qui rend invulnerable
                 print("SERVER EVENT: star rain !")
-                self.model.add_fruit(STAR)
+                self.model.add_items(STAR)
                 return
             elif choice == ISSOU:       #Aucun event
                 print("SERVER EVENT: issou !")
@@ -101,9 +101,12 @@ class NetworkServerController:
             
             #print("Envoie des fruit")
             fruits_to_send = pickle.dumps(self.model.fruits)
-
-
             socket.sendall(fruits_to_send)
+            socket.recv(1500)
+
+            #print("Envoie des items")
+            items_to_send = pickle.dumps(self.model.items)
+            socket.sendall(items_to_send)
             socket.recv(1500)
 
             #print("Envoie des position de bombes")
@@ -137,22 +140,18 @@ class NetworkServerController:
 
     def receive_char_position(self, socket):
         
-        for i in self.nick_dictionnary:
-            #print("i= "+str(i)+" | socket= "+str(ip))
+        for i in self.nick_dictionnary:         #On parcours la liste des cle de type socket dans le dictionnaire de noms
+            
             (ip,a,b,c) = i.getsockname()
-            if i == socket and not (ip == "::"):
-                #print("FOUND THE SOCKET")
+            if i == socket and not (ip == "::"):    #si la socket trouvée est la même que celle passee en parametre
                 inc = 0
-                for j in self.model.characters:
-                    if j.nickname == self.nick_dictionnary[i]:
+                for j in self.model.characters:         #On parcours la liste des characters
+                    if j.nickname == self.nick_dictionnary[i]:  #si le nom du charactere est le meme que celui de la socket
                         try:
-                            #print("FOUND THE CHARACTER")
-                            data = pickle.loads(socket.recv(1500))
-                            #print("Received: "+str(data.pos)+" !!!!")
                             
-                            socket.send(b'ACK')
-
-                            self.model.characters[inc] = data
+                            data = pickle.loads(socket.recv(1500))  #on recupere sa position depuis le client
+                            socket.send(b'ACK')                     #paquet d aquittement
+                            self.model.characters[inc] = data       #on modifie l objet Model() avec les nouvelles informations du client
                             
                             
                         except OSError as e:
@@ -177,22 +176,17 @@ class NetworkServerController:
                             print("[LN100] A socket disconnected: "+str(e))
                             self.disconnect(socket)
                             return
-                        except RuntimeError as e:
-                            print("[LN100] A socket disconnected: "+str(e))
-                            self.disconnect(socket)
-                            return
 
                     inc = inc+1
                     
                 
     def receive_bomb_position(self, socket):
-        (ip,a,b,c) = socket.getsockname()
-        nickname = self.nick_dictionnary[socket]
+        nickname = self.nick_dictionnary[socket]    #on recupere le pseudo lie a la socket
             
-        data = pickle.loads(socket.recv(1500))
+        data = pickle.loads(socket.recv(1500))      #on recupere les data de la bombe
         socket.send(b'ACK')
         
-        if not data == 'null':
+        if not data == 'null':  #si paquet recu == NULL: aucune bomb a placer sinon:
             print("DROPPING A BOMB BY:  "+str(nickname))
             character = self.model.look(nickname)
 
@@ -204,43 +198,41 @@ class NetworkServerController:
                 if bomb.pos == character.pos:
                     return
                 
-            self.model.bombs.append(Bomb(self.model.map, character.pos))
+            self.model.bombs.append(Bomb(self.model.map, character.pos))    #on pose une bombe
+                                                                            #le delai entre la pose de la bombe etant gere par le client
                 
                 
 
     def first_connection(self, socket, nick_wanted):
-        try:
-            (ip,a,b,c)=socket.getsockname()
-        except OSError:
-            print("oups")
-            return
         
         new_nick_wanted = nick_wanted
+
+
+        #on verifie si le pseudo n'est pas deja utilise
         i=0
         while not self.model.look(new_nick_wanted) == None:
             new_nick_wanted = nick_wanted+str(i)
             i=i+1
-         
+
+        #on ajoute le pseudo desire au dictionnaire a la cle 'socket'
         self.nick_dictionnary[socket] = new_nick_wanted
+        #on ajoute un characte en jeu au pseudo recu&genere par le serveur
         self.model.add_character(self.nick_dictionnary[socket], isplayer = False)
 
 
 
     def disconnect(self,socket):
         try:
-            (ip,a,b,c)=socket.getsockname()
-        except OSError as e:
-            print("[0x0f]: "+str(e))
-            return
-        
-        nick_to_remove = self.nick_dictionnary[socket]              #on recupere le pseudo de la socket
-        for i in self.nick_dictionnary:                             
-            if self.nick_dictionnary[i] == nick_to_remove:          #si la pos i est celle du pseudo
-                self.model.quit(self.nick_dictionnary[socket])      #on expulse le joueur avec ce pseudo
-                self.nick_dictionnary.pop(i)                        #on retire son pseudo du dictionnaire
-                break
-        self.liste_socket.remove(socket)    #on retire sa socket de la liste
-        socket.close()                      #close the socket
+            nick_to_remove = self.nick_dictionnary[socket]              #on recupere le pseudo de la socket
+            for i in self.nick_dictionnary:                             
+                if self.nick_dictionnary[i] == nick_to_remove:          #si la pos i est celle du pseudo
+                    self.model.quit(self.nick_dictionnary[socket])      #on expulse le joueur avec ce pseudo
+                    self.nick_dictionnary.pop(i)                        #on retire son pseudo du dictionnaire
+                    break
+            self.liste_socket.remove(socket)    #on retire sa socket de la liste
+            socket.close()                      #close the socket
+        except:
+            print("socket already closed")
 
 
     def death(self, sock):  #TO DO
@@ -265,14 +257,15 @@ class NetworkServerController:
                 
                 sock.recv(1500)    
                 sock.send(b'ACK')
+                
             else:#TO DO (s il n y a pas le nickname de la socket dans le dico, ie. son perso est mort)
                 self.send_map(sock)
                 
                 sock.recv(1500)    
                 sock.send(b'ACK')
-                
         except OSError as e:
-            print("A client as disconnected:   "+str(e))
+            print("[Ln101] A socket disconnected: "+str(e))
+            self.disconnect(socket)
         return
 
 
@@ -289,27 +282,26 @@ class NetworkServerController:
         (readable_socket,_,_) = select.select(self.liste_socket,[],[],0)   #le 0 correspond au delais d'attente avant que ça bloque
         
         for sock in readable_socket:                    #les sockets parmi la liste
-            
 
-                    
             self.verrou.acquire()                       #On 'desactive' les autres threads
-            
-            if sock == self.s:  #premiere connexion
+            if sock == self.s and len(self.liste_socket) >2:    #2 joueurs max
+                continue
+            elif sock == self.s:  #premiere connexion
                     (con, (ip,a,b,c)) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
                     print("ip: "+str(ip)+' connected')
 
                     
                     self.liste_socket.append(con)       #on ajoute la nouvelle socket a la liste des sockets
                     
-                    self.first_connection(con, con.recv(1500).decode()) #fonction recuperant le nickname, etc de la socket venant de se connecter
+                    self.first_connection(con, con.recv(2048).decode()) #fonction recuperant le nickname, etc de la socket venant de se connecter
                     
                         
                     con.send(b'ACK')
-                    con.recv(1500)  #paquets servant d accuses de reception pour ne pas 'corrompre les differents paquets
+                    con.recv(1024)  #paquets servant d accuses de reception pour ne pas 'corrompre les differents paquets
                         
                     self.send_map(con)  #on envoie la map a la socket
                                          
-                    con.recv(1500)    
+                    con.recv(1024)    
                     con.send(b'ACK')
 
                     
@@ -318,10 +310,6 @@ class NetworkServerController:
                     #puis on l ajoute au dictionnaire de notre class
                     Thread = threading.Thread(None, self.read_and_write, None, (sock,)).start()
                     self.threads[con] = Thread
-
-
-                    #ESSAYER CA MB
-                    #self.verrou.release()#on deverouille le verrou qui etait utilise par le thread de cette socket
 
 
                 
@@ -339,30 +327,13 @@ class NetworkServerController:
                         Thread.start()
                         pass#run a new thread
 
-                    
+                
                 except BrokenPipeError as e:
                     print("[Ln204] Client disconnected: "+str(e))
                     self.disconnect(sock)
-                except ConnectionResetError as e:
-                    print("[Ln208] Client disconnected: "+str(e))
-                    self.disconnect(sock)
-                except OSError as e:
-                    print("[Ln212] A socket disconnected: "+str(e))
-                    self.disconnect(sock)
-                    return
-                except EOFError as e:
-                    print("[Ln217] A socket disconnected: "+str(e))
-                    self.disconnect(sock)
-                    return
-                except RuntimeError as e:
-                    print("[Ln217] A socket disconnected: "+str(e))
-                    self.disconnect(sock)
-                    return
+                    
             self.verrou.release()#on deverouille le verrou qui etait utilise par le thread de cette socket
 
-                
-                
-        
         return True
 
     
@@ -417,6 +388,15 @@ class NetworkClientController:
         self.s.sendall(b"ACK")
         #print("fruits: "+str(fruits_array)+"\n")
         model.fruits = fruits
+        
+        #print("| Receiving fruits ...")
+        items = pickle.loads(self.s.recv(65536))
+        if not items: items_array = []
+        else:
+            items_array = items
+        self.s.sendall(b"ACK")
+        #print("fruits: "+str(fruits_array)+"\n")
+        model.items = items
 
         #print("| Receiving bombs ...")
         bombs = pickle.loads(self.s.recv(65536))
@@ -439,12 +419,10 @@ class NetworkClientController:
         #print("| Map well received\n---\n")
 
     def send_bomb_data(self):
-        #print("\n---\n| Sending new bomb data")
-        bombs_to_send = pickle.dumps(self.bomb_to_place)
-        self.s.sendall(bombs_to_send)
-        #print("| bomb data sent")
-        self.s.recv(1500)
-        #print("| Received ACK\n---\n")
+        bombs_to_send = pickle.dumps(self.bomb_to_place)    #on convertis l objet bomb dans un format readable par pickle
+        self.s.sendall(bombs_to_send)                       #on envoie les infos au serveur
+        
+        self.s.recv(1024)   #reception paquet d acquittement
         self.bomb_to_place = 'null'
         
     def send_my_pos(self):
@@ -491,30 +469,23 @@ class NetworkClientController:
 
     # time event
     def tick(self, dt):
-        if not self.model.look(self.nickname) == None:
-            print("usual tick")
-            
-            self.s.send(b'ACK')
+        
+        self.s.send(b'ACK')
 
 
-            self.send_my_pos()
-            self.s.send(b'ACK')
-            self.s.recv(1500)
+        self.send_my_pos()
+        self.s.send(b'ACK')
+        self.s.recv(1500)
 
 
-            self.send_bomb_data()
-            self.s.send(b'ACK')
-            self.s.recv(1500)
+        self.send_bomb_data()
+        self.s.send(b'ACK')
+        self.s.recv(1500)
 
-            
-            self.receive_map(self.model)
-            self.s.send(b'ACK')
-            self.s.recv(1500)
-        else:
-            print("SPECTATING")
-            self.receive_map(self.model)
-            self.s.send(b'ACK')
-            self.s.recv(1500)
+        
+        self.receive_map(self.model)
+        self.s.send(b'ACK')
+        self.s.recv(1500)
             
         try:
             self.model.player = self.model.look(self.nickname)
