@@ -26,15 +26,16 @@ BACKGROUNDS = ('0', '1', '2')
 DEFAULT_MAP = "maps/map0"
 
 #bonus
-STAR = 2
-PUSH = 3
+STAR = 0
+PUSH = 1
+BONUS = [STAR, PUSH]
+BONUS_STR = ["star","push"]
 
 # fruit
 BANANA = 0
 CHERRY = 1
-FRUITS_USUAL = [BANANA, CHERRY]
-FRUITS = [PUSH, BANANA, CHERRY, STAR]
-FRUITS_STR = [ "banana", "cherry", "star","push"]
+FRUITS = [BANANA, CHERRY]
+FRUITS_STR = [ "banana", "cherry"]
 
 # character
 DK = 0
@@ -77,6 +78,13 @@ class Map:
                 break
         return (x,y)
 ### Class Bonus ###
+class BonusItem:
+    def __init__(self, kind, m, pos):
+        self.map = m
+        self.pos = pos
+        self.kind = kind
+
+    
 ### Class Fruit ###
 
 class Fruit:
@@ -193,6 +201,7 @@ class Model:
         self.map = Map()
         self.characters = []
         self.fruits = []
+        self.items = []
         self.bombs = []
         self.player = None
 
@@ -231,9 +240,16 @@ class Model:
     # add a new fruit
     def add_fruit(self, kind = None, pos = None):
         if pos is None: pos = self.map.random()
-        if kind is None: kind = random.choice(FRUITS_USUAL)
+        if kind is None: kind = random.choice(FRUITS)
         self.fruits.append(Fruit(kind, self.map, pos))
         print("=> add fruit ({}) at position ({},{})".format(FRUITS_STR[kind], pos[X], pos[Y]))
+
+    # add a new fruit
+    def add_item(self, kind = None, pos = None):
+        if pos is None: pos = self.map.random()
+        if kind is None: kind = random.choice(BONUS)
+        self.items.append(BonusItem(kind, self.map, pos))
+        print("=> add item ({}) at position ({},{})".format(BONUS_STR[kind], pos[X], pos[Y]))
 
     # add a new character
     def add_character(self, nickname, isplayer = False, kind = None, pos = None):
