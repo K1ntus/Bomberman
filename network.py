@@ -242,11 +242,6 @@ class NetworkServerController:
         print("\n\n")
 
 
-    def death(self, sock):  #TO DO
-        self.disconnect(sock)
-        
-        
-
     def read_and_write(self, sock):
         (ip,port,c,d) = sock.getsockname()
         if sock == self.s:
@@ -417,6 +412,11 @@ class NetworkClientController:
         
         self.model.player = self.model.look(nickname)
         
+    def loose(self, model):
+        if model.player.is_dead():
+            printf("Le joueur " + str(self.nickname) + "a perdu\n")
+            character = model.look(self.nickname)
+            self.model.kill_character(character)
 
     def receive_map(self,model):
         #print("\n---\n| Receiving map")
