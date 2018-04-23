@@ -35,13 +35,15 @@ BAN_HAMMER = 0      #generating bombs on the map
 CRAZY_FRUIT = 1     #generating new fruits
 ISSOU = 2           #no event
 STAR_RAIN = 3       #generating a star: invulnerability 1k ms
+BOMB_AKBAR = 4
 
 #multiple time the same event for probability
 SERVER_EVENTS = [
         BAN_HAMMER, BAN_HAMMER,                 #2 - one bomb on each characters
         CRAZY_FRUIT, CRAZY_FRUIT, CRAZY_FRUIT,  #4 - 2 fruits appears
         ISSOU, ISSOU, ISSOU, ISSOU,             #3 - nothing
-        STAR_RAIN                               #1 - invulnerability
+        STAR_RAIN,                              #1 - invulnerability
+        BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR
     ]                             
 
 TICK_BEFORE_EVENT = 12500     #tick etween each server events in ms
@@ -82,6 +84,11 @@ class NetworkServerController:
         for c in self.model.characters:
             self.model.drop_bomb(c.nickname)
         
+    def event_bombAkbar(self):  
+        pos = self.model.map.random()
+        for i in range(5):
+            self.model.bombs.append(Bomb(self.model.map, pos))
+            
     def map_event(self):    #fonction principale permettant la gestion des evenements aleatoires 
         if self.tick_before_event >= TICK_BEFORE_EVENT:
             choice = random.choice(SERVER_EVENTS)
@@ -101,6 +108,10 @@ class NetworkServerController:
             elif choice == CRAZY_FRUIT: #Ajoute deux fruits aleatoirement
                 print("SERVER EVENT: crazy fruit !")
                 for _ in range(2): self.model.add_fruit()
+                return
+            elif choice == BOMB_AKBAR: #pluie de bombe, tu vas prendre cher
+                print("SERVER EVENT: bomb akbar !")
+                self.event_bombAkbar()
                 return
         
     def send_map(self, socket):
@@ -187,7 +198,7 @@ class NetworkServerController:
                 if bomb.pos == character.pos:
                     return
                 
-            self.model.bombs.append(Bomb(self.model.map, character.pos))
+            self.model.drop_bomb(nickname)
                 
                 
 

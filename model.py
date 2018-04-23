@@ -173,10 +173,10 @@ class Character:
             if item.kind == STAR:
                 self.immunity = 10000#10 seconds
                 print("{}\'s immunity: {}".format(self.nickname, self.immunity))
-            if item.kind == PUSH:
-                self.pushing = PUSHING
-                print("{}\'s pushing: {}".format(self.nickname, self.pushing))
-                return True
+            #if item.kind == PUSH:
+            #    self.pushing = PUSHING
+            #    print("{}\'s pushing: {}".format(self.nickname, self.pushing))
+            #    return True
             else:
                 self.health += 10
                 print("{}\'s health: {}".format(self.nickname, self.health))
@@ -216,33 +216,6 @@ class Model:
         self.bonus = []
         self.bombs = []
         self.player = None
-
-    def pushing_bomb(self): #(0,0) = en haut a gauche
-        for c in self.characters:
-            (a,b) = c.pos
-            if c.pushing == 0:
-                #return
-                print("no way")
-            if c.direction == DIRECTION_RIGHT:
-                for bombs in self.bombs:
-                    (x,y) = bombs.pos
-                    if (a +1) == x and x < self.map.width:
-                        bombs.pos = (x,x+1)
-            if c.direction == DIRECTION_LEFT:
-                for bombs in self.bombs:
-                    (x,y) = bombs.pos
-                    if (a -1) == x and x>0:
-                        bombs.pos = (x,x-1)
-            if c.direction == DIRECTION_UP:
-                for bombs in self.bombs:
-                    (x,y) = bombs.pos
-                    if (b -1) == y and y > 0:
-                        bombs.pos = (x,y-1)
-            if c.direction == DIRECTION_DOWN:
-                for bombs in self.bombs:
-                    (x,y) = bombs.pos
-                    if (b +1) == y and y < self.map.height:
-                        bombs.pos = (x,y+1)
 
     # look for a character, return None if not found
     def look(self, nickname):
