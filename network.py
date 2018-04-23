@@ -93,7 +93,7 @@ class NetworkServerController:
                 return
             elif choice == STAR_RAIN:   #genere une etoile qui rend invulnerable
                 print("SERVER EVENT: star rain !")
-                self.model.add_fruit(STAR)
+                #self.model.add_fruit(STAR)
                 return
             elif choice == ISSOU:       #Aucun event
                 print("SERVER EVENT: issou !")
@@ -115,9 +115,12 @@ class NetworkServerController:
             
             #print("Envoie des fruit")
             fruits_to_send = pickle.dumps(self.model.fruits)
-
-
             socket.sendall(fruits_to_send)
+            socket.recv(1500)
+            
+            #print("Envoie des bonus")
+            items_to_send = pickle.dumps(self.model.bonus)
+            socket.sendall(items_to_send)
             socket.recv(1500)
 
             #print("Envoie des position de bombes")
@@ -402,6 +405,7 @@ class NetworkClientController:
         self.s.recv(1500)
         
         self.model.player = self.model.look(nickname)
+        
 
     def receive_map(self,model):
         #print("\n---\n| Receiving map")
@@ -423,6 +427,15 @@ class NetworkClientController:
         self.s.sendall(b"ACK")
         #print("fruits: "+str(fruits_array)+"\n")
         model.fruits = fruits
+
+        #print("| Receiving items ...")
+        items = pickle.loads(self.s.recv(65536))
+        if not items: items_array = []
+        else:
+            items_array = items
+        self.s.sendall(b"ACK")
+        #print("fruits: "+str(fruits_array)+"\n")
+        model.bonus = items
 
         #print("| Receiving bombs ...")
         bombs = pickle.loads(self.s.recv(65536))
