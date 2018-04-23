@@ -277,6 +277,7 @@ class NetworkServerController:
        
     # time event 
     def tick(self, dt):
+        signal.alarm (0)
         Thread = None
         if len(self.liste_socket) > (MIN_PLAYER_FOR_EVENT): #s il y a au moins deux joueurs
             self.tick_before_event += dt                    #a chaque tick, on incremente le compteur avant un event
