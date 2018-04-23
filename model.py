@@ -44,7 +44,7 @@ ZELDA = 1
 BATMAN = 2
 CHARACTERS = [DK, ZELDA, BATMAN]
 CHARACTERS_STR = ["dk", "zelda", "batman"]
-HEALTH = 50
+HEALTH = 10
 MAX_RANGE = 5
 COUNTDOWN = 5
 IMMUNITY = 1500 # in ms
@@ -190,6 +190,11 @@ class Character:
         if self.disarmed > 0: self.disarmed -= dt
         else: self.disarmed = 0
 
+    def is_dead(self):
+        if self.health <= 0:
+            return True
+        return False
+
     def explosion(self, bomb):
         if bomb.countdown != 0: return False
         if self.immunity > 0: return False
@@ -199,8 +204,7 @@ class Character:
             self.health -= 10
             self.immunity = IMMUNITY
             print("{}\'s health: {}".format(self.nickname, self.health))
-        if self.health <= 0:
-            print("{} is dead!".format(self.nickname))
+        if self.is_dead():
             return True
         return False
 
