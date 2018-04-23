@@ -253,8 +253,12 @@ class Model:
     def add_bonus(self, kind = None, pos = None):
         if pos is None: pos = self.map.random()
         if kind is None: kind = random.choice(BONUS)
+        
         self.bonus.append(Bonus(kind, self.map, pos))
         print("=> add bonus ({}) at position ({},{})".format(BONUS_STR[kind], pos[X], pos[Y]))
+
+
+    
 
     # add a new character
     def add_character(self, nickname, isplayer = False, kind = None, pos = None):
