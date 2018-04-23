@@ -24,7 +24,8 @@ SPRITE_BLANK = "images/misc/blank.png"
 SPRITE_WALLS = [ "images/misc/wall0.png", "images/misc/wall1.png", "images/misc/wall2.png" ]
 SPRITE_BOMB = "images/misc/bomb.png"
 SPRITE_FIRE = "images/misc/fire.png"
-SPRITE_FRUITS = [ "images/misc/push.png", "images/misc/banana.png", "images/misc/cherry.png" , "images/misc/star.png" ]
+SPRITE_FRUITS = ["images/misc/banana.png", "images/misc/cherry.png"  ]
+SPRITE_BONUS = ["images/misc/star.png" , "images/misc/push.png" ]
 SPRITE_DK = [ "images/dk/left.png", "images/dk/right.png", "images/dk/up.png", "images/dk/down.png" ]
 SPRITE_ZELDA = [ "images/zelda/left.png", "images/zelda/right.png", "images/zelda/up.png", "images/zelda/down.png" ]
 SPRITE_BATMAN = [ "images/batman/left.png", "images/batman/right.png", "images/batman/up.png", "images/batman/down.png" ]
@@ -45,6 +46,7 @@ class GraphicView:
         self.sprite_backgrounds = [ pygame.image.load(sprite).convert() for sprite in SPRITE_BACKGROUNDS ]
         self.sprite_blank = pygame.image.load(SPRITE_BLANK).convert()
         self.sprite_fruits = [ pygame.image.load(sprite).convert_alpha() for sprite in SPRITE_FRUITS ]
+        self.sprite_bonus = [ pygame.image.load(sprite).convert_alpha() for sprite in SPRITE_BONUS ]
         self.sprite_bomb = pygame.image.load(SPRITE_BOMB).convert_alpha()
         self.sprite_fire = pygame.image.load(SPRITE_FIRE).convert_alpha()
         sprite_dk = [ pygame.image.load(sprite).convert_alpha() for sprite in SPRITE_DK ]
@@ -88,6 +90,12 @@ class GraphicView:
         x = fruit.pos[X] * SPRITE_SIZE
         y = fruit.pos[Y] * SPRITE_SIZE
         self.win.blit(self.sprite_fruits[fruit.kind], (x, y))
+        
+    # render fruit view
+    def render_bonus(self, item):
+        x = item.pos[X] * SPRITE_SIZE
+        y = item.pos[Y] * SPRITE_SIZE
+        self.win.blit(self.sprite_bonus[item.kind], (x, y))
 
     def render_bomb_explosion(self, bomb):
         x0 = bomb.pos[X]
@@ -132,6 +140,8 @@ class GraphicView:
             self.render_bomb(bomb)
         for fruit in self.model.fruits:
             self.render_fruit(fruit)
+        for bonus in self.model.bonus:
+            self.render_bonus(bonus)
         for character in self.model.characters:
             self.render_character(character)
         self.render_player(self.model.player)

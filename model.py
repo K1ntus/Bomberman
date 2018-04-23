@@ -26,15 +26,16 @@ BACKGROUNDS = ('0', '1', '2')
 DEFAULT_MAP = "maps/map0"
 
 #bonus
-STAR = 2
-PUSH = 3
+STAR = 0
+PUSH = 1
+BONUS = [STAR, PUSH]
+BONUS_STR = ["star","push"]
 
 # fruit
 BANANA = 0
 CHERRY = 1
-FRUITS_USUAL = [BANANA, CHERRY]
-FRUITS = [PUSH, BANANA, CHERRY, STAR]
-FRUITS_STR = [ "banana", "cherry", "star","push"]
+FRUITS = [BANANA, CHERRY]
+FRUITS_STR = ["banana", "cherry"]
 
 # character
 DK = 0
@@ -77,8 +78,13 @@ class Map:
                 break
         return (x,y)
 ### Class Bonus ###
+class Bonus:
+    def __init__(self, kind, m, pos):
+        self.map = m
+        self.pos = pos
+        self.kind = kind
+        
 ### Class Fruit ###
-
 class Fruit:
     def __init__(self, kind, m, pos):
         self.map = m
@@ -152,9 +158,16 @@ class Character:
                     self.pos = (self.pos[X], self.pos[Y]+1)
             self.direction = DIRECTION_DOWN
 
-    def eat(self, fruit):
+    def eat(self, fruit):   #when u walk on a fruit
         if fruit.pos[X] == self.pos[X] and fruit.pos[Y] == self.pos[Y]:
-            if fruit.kind == STAR:
+            self.health += 10
+            print("{}\'s health: {}".format(self.nickname, self.health))
+            return True
+        return False
+    
+    def consume(self, item):    #when u walk on an item
+        if item.pos[X] == self.pos[X] and item.pos[Y] == self.pos[Y]:
+            if item.kind == STAR:
                 self.immunity = 10000#10 seconds
                 print("{}\'s immunity: {}".format(self.nickname, self.immunity))
             else:
@@ -193,6 +206,7 @@ class Model:
         self.map = Map()
         self.characters = []
         self.fruits = []
+        self.bonus = []
         self.bombs = []
         self.player = None
 
@@ -231,9 +245,16 @@ class Model:
     # add a new fruit
     def add_fruit(self, kind = None, pos = None):
         if pos is None: pos = self.map.random()
-        if kind is None: kind = random.choice(FRUITS_USUAL)
+        if kind is None: kind = random.choice(FRUITS)
         self.fruits.append(Fruit(kind, self.map, pos))
         print("=> add fruit ({}) at position ({},{})".format(FRUITS_STR[kind], pos[X], pos[Y]))
+        
+    # add a bonus item
+    def add_bonus(self, kind = None, pos = None):
+        if pos is None: pos = self.map.random()
+        if kind is None: kind = random.choice(BONUS)
+        self.bonus.append(Bonus(kind, self.map, pos))
+        print("=> add bonus ({}) at position ({},{})".format(BONUS_STR[kind], pos[X], pos[Y]))
 
     # add a new character
     def add_character(self, nickname, isplayer = False, kind = None, pos = None):
