@@ -28,6 +28,7 @@ DEFAULT_MAP = "maps/map0"
 #bonus
 STAR = 0
 PUSH = 1
+TELEPORTER = 2
 BONUS = [STAR, PUSH]
 BONUS_STR = ["star","push"]
 
@@ -48,6 +49,7 @@ MAX_RANGE = 5
 COUNTDOWN = 5
 IMMUNITY = 1500 # in ms
 DISARMED = 2000 # in ms
+PUSHING = 5000 # in ms
 
 ### Class Map ###
 
@@ -128,6 +130,7 @@ class Character:
         self.health = HEALTH
         self.immunity = 0 # the character gets immunity against bomb during this time (in ms)
         self.disarmed = 0 # the character cannot drop a bomb during this time (in ms)
+        self.pushing = 0 #  the character can push bomb during those ticks
         self.nickname = nickname
         self.pos = pos
         self.direction = DIRECTION_RIGHT
@@ -170,6 +173,10 @@ class Character:
             if item.kind == STAR:
                 self.immunity = 10000#10 seconds
                 print("{}\'s immunity: {}".format(self.nickname, self.immunity))
+            if item.kind == PUSH:
+                self.pushing = PUSHING
+                print("{}\'s pushing: {}".format(self.nickname, self.pushing))
+                return True
             else:
                 self.health += 10
                 print("{}\'s health: {}".format(self.nickname, self.health))
@@ -209,6 +216,33 @@ class Model:
         self.bonus = []
         self.bombs = []
         self.player = None
+
+    def pushing_bomb(self): #(0,0) = en haut a gauche
+        for c in self.characters:
+            (a,b) = c.pos
+            if c.pushing == 0:
+                #return
+                print("no way")
+            if c.direction == DIRECTION_RIGHT:
+                for bombs in self.bombs:
+                    (x,y) = bombs.pos
+                    if (a +1) == x and x < self.map.width:
+                        bombs.pos = (x,x+1)
+            if c.direction == DIRECTION_LEFT:
+                for bombs in self.bombs:
+                    (x,y) = bombs.pos
+                    if (a -1) == x and x>0:
+                        bombs.pos = (x,x-1)
+            if c.direction == DIRECTION_UP:
+                for bombs in self.bombs:
+                    (x,y) = bombs.pos
+                    if (b -1) == y and y > 0:
+                        bombs.pos = (x,y-1)
+            if c.direction == DIRECTION_DOWN:
+                for bombs in self.bombs:
+                    (x,y) = bombs.pos
+                    if (b +1) == y and y < self.map.height:
+                        bombs.pos = (x,y+1)
 
     # look for a character, return None if not found
     def look(self, nickname):
@@ -252,12 +286,13 @@ class Model:
     # add a bonus item
     def add_bonus(self, kind = None, pos = None):
         if pos is None: pos = self.map.random()
-        if kind is None: kind = random.choice(BONUS)
-        
+        if kind is None: kind = random.choice(BONUS) 
         self.bonus.append(Bonus(kind, self.map, pos))
         print("=> add bonus ({}) at position ({},{})".format(BONUS_STR[kind], pos[X], pos[Y]))
 
 
+
+            
     
 
     # add a new character
@@ -302,12 +337,17 @@ class Model:
             if bomb.countdown == -1:
                 self.bombs.remove(bomb)
 
-        # update characters and eat fruits
+        #self.pushing_bomb()
+
+        # update characters and eat fruits and consume bonus
         for character in self.characters:
             character.tick(dt)
             for fruit in self.fruits:
                 if character.eat(fruit):
                     self.fruits.remove(fruit)
+            for item in self.bonus:
+                if character.consume(item):
+                    self.bonus.remove(item)
 
         # update characters after bomb explosion
         for bomb in self.bombs:
