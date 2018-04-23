@@ -35,18 +35,18 @@ BAN_HAMMER = 0      #generating bombs on the map
 CRAZY_FRUIT = 1     #generating new fruits
 ISSOU = 2           #no event
 STAR_RAIN = 3       #generating a star: invulnerability 1k ms
-BOMB_AKBAR = 4
+NB_BOMB_AKBAR = 10  #nb of bomb which are randomly drop on the map
 
 #multiple time the same event for probability
 SERVER_EVENTS = [
         BAN_HAMMER, BAN_HAMMER,                 #2 - one bomb on each characters
         CRAZY_FRUIT, CRAZY_FRUIT, CRAZY_FRUIT,  #4 - 2 fruits appears
         ISSOU, ISSOU, ISSOU, ISSOU,             #3 - nothing
-        STAR_RAIN,                              #1 - invulnerability
-        BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR, BOMB_AKBAR
-    ]                             
+        STAR_RAIN                              #1 - invulnerability
+    ]
 
 TICK_BEFORE_EVENT = 12500     #tick etween each server events in ms
+TICK_BEFORE_BOMB_CRISIS = 30000     #tick etween each server events in ms
 MIN_PLAYER_FOR_EVENT = 2    #Minimal numbers of players to allow server events
 
 
@@ -75,6 +75,7 @@ class NetworkServerController:
         (ip,a,b,c) = self.s.getsockname()
         self.nick_dictionnary={self.s:"server"}
 
+        self.tick_before_bomb_crisis = 0                  #a chaque tick, on incremente le compteur avant un event
         self.tick_before_event = 0      #compteur entre chaque evenements serveurs
 
 
@@ -83,13 +84,18 @@ class NetworkServerController:
     def event_banHammer(self):  
         for c in self.model.characters:
             self.model.drop_bomb(c.nickname)
-        
+            
     def event_bombAkbar(self):  
-        pos = self.model.map.random()
-        for i in range(5):
+        for i in range(NB_BOMB_AKBAR):
+            pos = self.model.map.random()
             self.model.bombs.append(Bomb(self.model.map, pos))
             
-    def map_event(self):    #fonction principale permettant la gestion des evenements aleatoires 
+    def map_event(self):    #fonction principale permettant la gestion des evenements aleatoires
+        if self.tick_before_bomb_crisis >= TICK_BEFORE_BOMB_CRISIS:
+            print("SERVER EVENT: bomb akbar !")
+            self.event_bombAkbar()
+            self.tick_before_bomb_crisis = 0
+            
         if self.tick_before_event >= TICK_BEFORE_EVENT:
             choice = random.choice(SERVER_EVENTS)
             self.tick_before_event = 0
@@ -109,10 +115,7 @@ class NetworkServerController:
                 print("SERVER EVENT: crazy fruit !")
                 for _ in range(2): self.model.add_fruit()
                 return
-            elif choice == BOMB_AKBAR: #pluie de bombe, tu vas prendre cher
-                print("SERVER EVENT: bomb akbar !")
-                self.event_bombAkbar()
-                return
+
         
     def send_map(self, socket):
         #print("\nEnvoie de la map ...")
@@ -166,10 +169,13 @@ class NetworkServerController:
     def receive_char_position(self, socket):
         try:
             data = pickle.loads(socket.recv(2048))
+            
             #print("DATA received:    "+str(data))
             socket.send(b'ACK')
 
             character = self.model.look(data.nickname)
+            if character == None:
+                return
             character.pos = data.pos
             
             character.direction = data.direction
@@ -177,6 +183,8 @@ class NetworkServerController:
             print("[0x12] error: "+ str(e))
             self.disconnect(socket)
             sys.exit()
+        except AttributeError:
+            pass
                     
                 
     def receive_bomb_position(self, socket):
@@ -290,6 +298,8 @@ class NetworkServerController:
         Thread = None
         if len(self.liste_socket) > (MIN_PLAYER_FOR_EVENT): #s il y a au moins deux joueurs
             self.tick_before_event += dt                    #a chaque tick, on incremente le compteur avant un event
+            self.tick_before_bomb_crisis += dt                    #a chaque tick, on incremente le compteur avant un event
+            
         self.map_event()                                    #on appelle la fonction gerant les events 
 
 
@@ -327,8 +337,6 @@ class NetworkServerController:
                     self.threads[con] = Thread
 
 
-                    #ESSAYER CA MB
-                    #self.verrou.release()#on deverouille le verrou qui etait utilise par le thread de cette socket
 
 
                 
@@ -338,14 +346,14 @@ class NetworkServerController:
                 
                 try:
                     if self.threads[sock] is not None and self.threads[sock].is_alive():        #si le thread est deja en train de fonctionner
-                        pass#already running
+                        pass    #already running
                     
-                    else:   #si il n y a pas de thread pour cette socket
-                        #on cree un nouveau thread etc
+                    else:       #si il n y a pas de thread pour cette socket
+                                #on cree un nouveau thread etc
                         Thread = threading.Thread(None, self.read_and_write, None, (sock,))
                         self.threads[sock] = Thread
                         Thread.start()
-                        pass#run a new thread
+                        pass    #run a new thread
 
                     
                 except BrokenPipeError as e:
@@ -521,7 +529,7 @@ class NetworkClientController:
 
     def receive_all_data(self):                
                 self.s.send(b'ACK')
-
+                
 
                 self.send_my_pos()
                 self.s.send(b'ACK')
@@ -542,6 +550,7 @@ class NetworkClientController:
     def tick(self, dt):
         #Thread = threading.Thread(None, self.receive_all_data, None, (self.s,)).start()
         signal.alarm (0)
+        
         try:
             if not self.model.look(self.nickname) == None:
                 self.receive_all_data()
