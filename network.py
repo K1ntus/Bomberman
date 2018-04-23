@@ -234,7 +234,7 @@ class NetworkServerController:
         
 
     def read_and_write(self, sock):
-        (a,b,c,d) = sock.getsockname()
+        (ip,port,c,d) = sock.getsockname()
         if sock == self.s:
             return
         try:
@@ -266,6 +266,13 @@ class NetworkServerController:
         except pickle.UnpicklingError:
             sys.exit()
             return
+        except socket.timeout:
+            print(str(ip) + " : "+str(port) + "  as lost connection")
+            sock.send(b'ACK')
+            print("Reconnection in pending ...")
+            self.read_and_write(sock)
+            print(str(ip) + " : "+str(port) + " just reconnected !")
+            return False
 
        
     # time event 
@@ -287,6 +294,7 @@ class NetworkServerController:
             if sock == self.s:  #premiere connexion
                     (con, (ip,a,b,c)) = self.s.accept() #on accepte un nouveau client aka nouvelle socket
                     print("ip: "+str(ip)+ "  :  "+str(a)+' connected')
+                    con.settimeout(1)
 
                     self.liste_socket.append(con)       #on ajoute la nouvelle socket a la liste des sockets
                     
@@ -486,9 +494,7 @@ class NetworkClientController:
         print("a")
         #foncton appelée pour charger les data apres que le joueur soit mort
 
-    def receive_all_data(self):
-                print("usual tick")
-                
+    def receive_all_data(self):                
                 self.s.send(b'ACK')
 
 
@@ -515,9 +521,15 @@ class NetworkClientController:
             if not self.model.look(self.nickname) == None:
                 self.receive_all_data()
         except socket.timeout:
-            print("SOCKET TIMED OUT")
-
-            return False
+            print("Timed out ...")
+            self.s.settimeout(5)
+            self.s.recv(1500)
+            print("Reconnection ...")
+            self.tick(dt)
+            
+            self.s.settimeout(1)
+            print("Reconnected !")
+            return True
             
         try:
             self.model.player = self.model.look(self.nickname)
