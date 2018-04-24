@@ -183,7 +183,7 @@ class NetworkServerController:
             print("[0x12] error: "+ str(e))
             self.disconnect(socket)
             sys.exit()
-        except AttributeError:
+        except AttributeError:  #si le joueur est mort, alors look(nickname) return null alors exception AttributeError
             pass
                     
                 
@@ -321,13 +321,13 @@ class NetworkServerController:
                     self.first_connection(con, con.recv(1500).decode()) #fonction recuperant le nickname, etc de la socket venant de se connecter
                     
                         
-                    con.send(b'ACK')
-                    con.recv(1500)  #paquets servant d accuses de reception pour ne pas 'corrompre les differents paquets
+                    con.send(b'ACK')    #envoie acquittement 
+                    con.recv(1500)      #paquets servant d accuses de reception pour ne pas 'corrompre les differents paquets
                         
                     self.send_map(con)  #on envoie la map a la socket
                                          
-                    con.recv(1500)    
-                    con.send(b'ACK')
+                    con.recv(1500)      #reception acquittement
+                    con.send(b'ACK')    #envoie acquittement
 
                     
 
@@ -391,10 +391,7 @@ class NetworkServerController:
 
 class NetworkClientController:
 
-    def __init__(self, model, host, port, nickname):
-        threading.Thread.__init__(self)
-        self.verrou = threading.Lock()      #verrou pour synchroniser les threads
-        
+    def __init__(self, model, host, port, nickname):        
         self.model = model
         self.host = host
         self.port = port
@@ -559,9 +556,9 @@ class NetworkClientController:
             self.s.settimeout(5)
             self.s.recv(1500)
             print("Reconnection ...")
+            self.s.settimeout(1)
             self.tick(dt)
             
-            self.s.settimeout(1)
             print("Reconnected !")
             return True
             
@@ -570,7 +567,6 @@ class NetworkClientController:
         except AttributeError as e:
             self.model.player = None
             print("[0x001] disconnected: "+str(e))
-            return False
 
         
         return True
