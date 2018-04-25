@@ -145,4 +145,12 @@ class GraphicView:
         for character in self.model.characters:
             self.render_character(character)
         self.render_player(self.model.player)
+        if self.model.player == None:
+            chaine = "LOOSER"
+            font = pygame.font.SysFont("arial",40,bold=False,italic=False)
+            text = font.render(chaine,1,(255,255,255))
+            text_size = text.get_width()
+            pos = (0,0)
+            print("TEXTE SIZE: " +str(text_size))
+            self.win.blit(text,pos)
         pygame.display.flip()
