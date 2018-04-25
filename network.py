@@ -35,7 +35,7 @@ BAN_HAMMER = 0      #generating bombs on the map
 CRAZY_FRUIT = 1     #generating new fruits
 ISSOU = 2           #no event
 STAR_RAIN = 3       #generating a star: invulnerability 1k ms
-NB_BOMB_AKBAR = 10  #nb of bomb which are randomly drop on the map
+NB_BOMB_AKBAR = 8  #nb of bomb which are randomly drop on the map
 
 #multiple time the same event for probability
 SERVER_EVENTS = [
@@ -46,7 +46,7 @@ SERVER_EVENTS = [
     ]
 
 TICK_BEFORE_EVENT = 12500     #tick etween each server events in ms
-TICK_BEFORE_BOMB_CRISIS = 30000     #tick etween each server events in ms
+TICK_BEFORE_BOMB_CRISIS = 60000     #tick etween each server events in ms
 MIN_PLAYER_FOR_EVENT = 2    #Minimal numbers of players to allow server events
 
 
@@ -549,8 +549,7 @@ class NetworkClientController:
         signal.alarm (0)
         
         try:
-            if not self.model.look(self.nickname) == None:
-                self.receive_all_data()
+            self.receive_all_data()
         except socket.timeout:
             print("Timed out ...")
             self.s.settimeout(5)
