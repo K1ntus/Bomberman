@@ -90,7 +90,7 @@ class GraphicView:
         x = fruit.pos[X] * SPRITE_SIZE
         y = fruit.pos[Y] * SPRITE_SIZE
         self.win.blit(self.sprite_fruits[fruit.kind], (x, y))
-        
+
     # render fruit view
     def render_bonus(self, item):
         x = item.pos[X] * SPRITE_SIZE
@@ -151,6 +151,5 @@ class GraphicView:
             text = font.render(chaine,1,(255,255,255))
             text_size = text.get_width()
             pos = (0,0)
-            print("TEXTE SIZE: " +str(text_size))
             self.win.blit(text,pos)
         pygame.display.flip()
