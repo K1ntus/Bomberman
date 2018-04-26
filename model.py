@@ -44,7 +44,7 @@ ZELDA = 1
 BATMAN = 2
 CHARACTERS = [DK, ZELDA, BATMAN]
 CHARACTERS_STR = ["dk", "zelda", "batman"]
-HEALTH = 50
+HEALTH = 10
 MAX_RANGE = 5
 COUNTDOWN = 3
 IMMUNITY = 1500 # in ms
@@ -85,7 +85,7 @@ class Bonus:
         self.map = m
         self.pos = pos
         self.kind = kind
-        
+
 ### Class Fruit ###
 class Fruit:
     def __init__(self, kind, m, pos):
@@ -167,7 +167,7 @@ class Character:
             print("{}\'s health: {}".format(self.nickname, self.health))
             return True
         return False
-    
+
     def consume(self, item):    #when u walk on an item
         if item.pos[X] == self.pos[X] and item.pos[Y] == self.pos[Y]:
             if item.kind == STAR:
@@ -259,18 +259,18 @@ class Model:
         if kind is None: kind = random.choice(FRUITS)
         self.fruits.append(Fruit(kind, self.map, pos))
         print("=> add fruit ({}) at position ({},{})".format(FRUITS_STR[kind], pos[X], pos[Y]))
-        
+
     # add a bonus item
     def add_bonus(self, kind = None, pos = None):
         if pos is None: pos = self.map.random()
-        if kind is None: kind = random.choice(BONUS) 
+        if kind is None: kind = random.choice(BONUS)
         self.bonus.append(Bonus(kind, self.map, pos))
         print("=> add bonus ({}) at position ({},{})".format(BONUS_STR[kind], pos[X], pos[Y]))
 
 
 
-            
-    
+
+
 
     # add a new character
     def add_character(self, nickname, isplayer = False, kind = None, pos = None):

@@ -36,7 +36,7 @@ model = Model()
 model.load_map(map_file)
 for _ in range(10): model.add_fruit()
 model.add_bonus(STAR)
-for _ in range(2): model.add_bonus(PUSH)
+#for _ in range(2): model.add_bonus(PUSH) #unfinished item
 server = NetworkServerController(model, port)
 # view = GraphicView(model, "server")
 
