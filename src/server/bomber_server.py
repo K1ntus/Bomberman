@@ -2,11 +2,14 @@
 # -*- coding: Utf-8 -*
 # Author: aurelien.esnard@u-bordeaux.fr
 
-from model import *
-from view import *
-from network import *
 import sys
+
 import pygame
+
+from src.client.view import FPS
+from src.common.model import DEFAULT_MAP, Model, STAR
+from src.common.network import NetworkServerController
+
 
 ### python version ###
 print("python version: {}.{}.{}".format(sys.version_info[0], sys.version_info[1], sys.version_info[2]))

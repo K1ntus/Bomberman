@@ -1,0 +1,8 @@
+eclipse.preferences.version=1
+encoding//src/__main__.py=Utf-8
+encoding//src/client/bomber_client.py=Utf-8
+encoding//src/client/keyboard.py=Utf-8
+encoding//src/client/view.py=Utf-8
+encoding//src/common/model.py=Utf-8
+encoding//src/common/network.py=Utf-8
+encoding//src/server/bomber_server.py=Utf-8

@@ -2,15 +2,15 @@
 # Author: aurelien.esnard@u-bordeaux.fr
 
 import pygame
-from model import *
+
+from src.common.model import DIRECTION_LEFT, DIRECTION_RIGHT, DIRECTION_UP, \
+    DIRECTION_DOWN
+
 
 ################################################################################
 #                          KEYBOARD CONTROLLER                                 #
 ################################################################################
-
-
 ### Class KeyboardController ###
-
 class KeyboardController:
 
     def __init__(self, evm):

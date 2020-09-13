@@ -2,12 +2,16 @@
 # -*- coding: Utf-8 -*
 # Author: aurelien.esnard@u-bordeaux.fr
 
-from model import *
-from view import *
-from keyboard import *
-from network import *
+
 import sys
+
 import pygame
+
+from src.client.keyboard import KeyboardController
+from src.client.view import GraphicView, FPS
+from src.common.model import Model
+from src.common.network import NetworkClientController
+
 
 ### python version ###
 print("python version: {}.{}.{}".format(sys.version_info[0], sys.version_info[1], sys.version_info[2]))

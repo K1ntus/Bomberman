@@ -1,21 +1,20 @@
 # -*- coding: Utf-8 -*
 # Author: aurelien.esnard@u-bordeaux.fr
 
-from model import *
-import sys
-import socket
-import select
 import pickle
-
+from random import random
+import select
+import socket
+import sys
 import threading
+import time  # time.sleep(1) #1000ms
 
-import time #time.sleep(1) #1000ms
+from src.common.model import Bomb, DIRECTIONS_STR, DIRECTIONS
+
 
 ################################################################################
 #                               THREAD TIME OUT                                #
 ################################################################################
-import signal
-
 class TimeoutException (Exception):
     pass
 
@@ -24,12 +23,12 @@ def signalHandler (signum, frame):
 
 TIMEOUT_DURATION = 5
 
+# Only available under Unix based Systems.
 signal.signal (signal.SIGALRM, signalHandler)
 signal.alarm (TIMEOUT_DURATION)
 ################################################################################
 #                                     CONSTANTE                                #
 ################################################################################
-
 
 BAN_HAMMER = 0      #generating bombs on the map
 CRAZY_FRUIT = 1     #generating new fruits
@@ -423,7 +422,7 @@ class NetworkClientController:
 
     def loose(self, model):
         if model.player.is_dead():
-            printf("Le joueur " + str(self.nickname) + "a perdu\n")
+            print("Le joueur " + str(self.nickname) + "a perdu\n")
             character = model.look(self.nickname)
             self.model.kill_character(character)
 

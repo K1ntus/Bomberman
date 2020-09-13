@@ -1,15 +1,16 @@
 # -*- coding: Utf-8 -*
 # Author: aurelien.esnard@u-bordeaux.fr
 
-from model import *
 import pygame
+
+from src.common.model import X, Y, DIRECTION_LEFT, DIRECTION_RIGHT, DIRECTION_UP, \
+    DIRECTION_DOWN
+
 
 ################################################################################
 #                                 VIEW                                         #
 ################################################################################
-
 ### Constants ###
-
 FPS = 30
 WIN_TITLE = "Bomber Man"
 SPRITE_SIZE = 30 # 30x30 pixels
@@ -149,7 +150,7 @@ class GraphicView:
             chaine = "LOOSER"
             font = pygame.font.SysFont("arial",40,bold=False,italic=False)
             text = font.render(chaine,1,(255,255,255))
-            text_size = text.get_width()
+            #text_size = text.get_width()
             pos = (0,0)
             self.win.blit(text,pos)
         pygame.display.flip()
